@@ -1,0 +1,3864 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 두더지 잡기 - MolyPoly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ===== RESET & BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;overflow:hidden;user-select:none;cursor:none;}
+
+/* ===== CUSTOM HAMMER CURSOR ===== */
+#hammer-cursor{
+  position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
+  transform:translate(-10px,-8px);transition:transform 0.05s;
+}
+#hammer-cursor.hit{animation:hammerSwing 0.2s ease-out;}
+@keyframes hammerSwing{
+  0%{transform:translate(-10px,-8px) rotate(0deg);}
+  40%{transform:translate(-10px,-8px) rotate(-35deg) scaleY(0.85);}
+  100%{transform:translate(-10px,-8px) rotate(0deg);}
+}
+
+/* ===== SCREENS ===== */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s;}
+.screen.hidden{opacity:0;pointer-events:none;}
+
+/* ===== LOGIN SCREEN ===== */
+#login-screen{
+  background:linear-gradient(135deg,#ffecd2 0%,#fcb69f 50%,#ffecd2 100%);
+  flex-direction:column;gap:20px;
+}
+.login-card{
+  background:linear-gradient(160deg,rgba(255,255,255,0.96) 0%,rgba(255,248,240,0.92) 100%);
+  border-radius:36px;padding:48px 56px;
+  box-shadow:0 12px 48px rgba(255,100,60,0.2),0 2px 8px rgba(255,160,100,0.12),inset 0 1px 0 rgba(255,255,255,0.9);
+  text-align:center;
+  border:2px solid rgba(255,195,140,0.5);
+  max-width:420px;width:90%;
+  backdrop-filter:blur(8px);
+}
+.login-title{
+  font-family:'Fredoka One',cursive;
+  font-size:2.8rem;letter-spacing:3px;
+  background:linear-gradient(130deg,#ff6b35 0%,#f7931e 30%,#ffcc02 55%,#ff6b6b 80%,#c855d8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+  text-shadow:none;
+  filter:drop-shadow(0 2px 8px rgba(255,120,60,0.25));
+}
+.login-subtitle{
+  font-family:'Jua',sans-serif;
+  font-size:1rem;color:#c17b5a;margin-bottom:28px;
+  letter-spacing:1px;
+}
+.mole-preview{margin:16px auto 28px;width:90px;height:90px;position:relative;}
+.login-input{
+  width:100%;padding:14px 20px;border-radius:20px;
+  border:2.5px solid #ffb085;font-size:1.05rem;
+  font-family:'Jua',sans-serif;
+  background:#fffaf7;color:#5a3e2b;outline:none;
+  text-align:center;transition:border 0.2s,box-shadow 0.2s;
+  box-shadow:inset 0 2px 6px rgba(200,120,60,0.08);
+}
+.login-input:focus{border-color:#ff7043;box-shadow:0 0 0 3px rgba(255,112,67,0.15),inset 0 2px 6px rgba(200,120,60,0.08);}
+.login-btn{
+  margin-top:18px;width:100%;padding:16px;
+  border-radius:22px;border:none;cursor:none;
+  background:linear-gradient(135deg,#ff7043 0%,#ff5252 60%,#e91e63 100%);
+  color:#fff;font-family:'Jua',sans-serif;font-size:1.2rem;
+  box-shadow:0 5px 20px rgba(255,80,60,0.4),inset 0 1px 0 rgba(255,255,255,0.25);
+  transition:transform 0.15s,box-shadow 0.15s;letter-spacing:2px;
+}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,80,60,0.5),inset 0 1px 0 rgba(255,255,255,0.25);}
+
+/* ===== HOLE COUNT CONTROL ===== */
+.hole-ctrl{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  margin:14px 0 0;padding:10px 16px;
+  background:rgba(255,240,225,0.7);border-radius:16px;
+  border:1.5px solid rgba(255,180,120,0.35);
+}
+.hole-ctrl-label{font-size:0.82rem;font-weight:800;color:#a07060;}
+.hole-ctrl-btn{
+  width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,140,80,0.5);
+  background:rgba(255,255,255,0.9);font-size:1.1rem;font-weight:900;
+  color:#d4380d;cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:background 0.15s,transform 0.12s;
+}
+.hole-ctrl-btn:hover{background:#fff0e8;transform:scale(1.12);}
+.hole-ctrl-btn:disabled{opacity:0.3;transform:none;}
+.hole-ctrl-val{
+  font-size:1.05rem;font-weight:900;color:#5a3e2b;
+  min-width:52px;text-align:center;
+}
+.hole-ctrl-hint{font-size:0.68rem;color:#b09080;margin-top:2px;}
+
+/* ===== GAME SCREEN ===== */
+#game-screen{flex-direction:column;background:transparent;}
+#game-screen.bg-desert,#game-screen.bg-river,
+#game-screen.bg-sakura,#game-screen.bg-ocean,#game-screen.bg-snow{background:transparent;}
+#game-field{position:relative;z-index:2;}
+
+/* ===== FANCY BACKGROUND SCENE ===== */
+#bg-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-layer{position:absolute;inset:0;}
+.scene-desert,.scene-sakura,.scene-ocean,.scene-snow{display:none;}
+.scene-river{display:block;}
+#game-screen.bg-desert .scene-river{display:none;}
+#game-screen.bg-desert .scene-desert{display:block;}
+#game-screen.bg-sakura .scene-river{display:none;}
+#game-screen.bg-sakura .scene-sakura{display:block;}
+#game-screen.bg-ocean  .scene-river{display:none;}
+#game-screen.bg-ocean  .scene-ocean{display:block;}
+#game-screen.bg-snow   .scene-river{display:none;}
+#game-screen.bg-snow   .scene-snow{display:block;}
+
+/* 벚꽃 잎 낙하 */
+@keyframes petalFall{
+  0%  {transform:translate(0,-20px) rotate(0deg);opacity:0;}
+  8%  {opacity:.9;}
+  92% {opacity:.7;}
+  100%{transform:translate(var(--px,60px),110vh) rotate(var(--pr,480deg));opacity:0;}
+}
+.petal{position:absolute;border-radius:50% 0 50% 0;pointer-events:none;
+  width:var(--pw,10px);height:var(--ph,7px);background:var(--pc,#ffc0d0);
+  animation:petalFall var(--pd,7s) ease-in var(--pde,0s) infinite;}
+
+/* 해저 거품 */
+@keyframes bubbleRise{
+  0%  {transform:translateY(0) scale(1);opacity:.7;}
+  100%{transform:translateY(-105vh) scale(1.3);opacity:0;}
+}
+.bubble{position:absolute;border-radius:50%;pointer-events:none;
+  width:var(--bs,8px);height:var(--bs,8px);
+  border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);
+  animation:bubbleRise var(--bd,9s) ease-in var(--bde,0s) infinite;}
+
+/* 해초 흔들림 */
+@keyframes sway{
+  0%,100%{transform:rotate(0deg) translateX(0);}
+  50%{transform:rotate(6deg) translateX(4px);}
+}
+.sway{transform-origin:bottom center;animation:sway 3s ease-in-out infinite;}
+
+/* 물고기 이동 */
+@keyframes fishSwimR{0%{transform:translateX(-160px);}100%{transform:translateX(1700px);}}
+@keyframes fishSwimL{0%{transform:translateX(1700px);}100%{transform:translateX(-160px);}}
+.fish-r{animation:fishSwimR var(--fd,14s) linear var(--fde,0s) infinite;}
+.fish-l{animation:fishSwimL var(--fd,11s) linear var(--fde,0s) infinite;}
+
+/* 해파리 맥동 */
+@keyframes jellyPulse{
+  0%,100%{transform:scaleY(1);}
+  50%{transform:scaleY(0.84);}
+}
+.jelly{transform-origin:center top;animation:jellyPulse 2.8s ease-in-out infinite;}
+
+/* 눈송이 낙하 */
+@keyframes snowFall{
+  0%  {transform:translate(0,-10px) rotate(0deg);opacity:0;}
+  10% {opacity:.8;}
+  90% {opacity:.6;}
+  100%{transform:translate(var(--sx,20px),105vh) rotate(var(--sr,360deg));opacity:0;}
+}
+.snowflake{position:absolute;pointer-events:none;color:#fff;
+  font-size:var(--ss,14px);
+  animation:snowFall var(--sd,8s) linear var(--sde,0s) infinite;}
+
+.ff{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:#b9f800;box-shadow:0 0 7px 3px rgba(185,248,0,0.85);
+  animation:ffFloat var(--dur,4s) ease-in-out infinite,
+            ffBlink 1.4s ease-in-out infinite;
+  animation-delay:var(--ff-d,0s);
+}
+@keyframes ffFloat{
+  0%{transform:translate(0,0);}
+  25%{transform:translate(var(--dx1,20px),var(--dy1,-35px));}
+  50%{transform:translate(var(--dx2,-18px),var(--dy2,-60px));}
+  75%{transform:translate(var(--dx3,32px),var(--dy3,-25px));}
+  100%{transform:translate(0,0);}
+}
+@keyframes ffBlink{0%,100%{opacity:.95;}45%{opacity:.05;}}
+
+.shooting-star{
+  position:absolute;width:110px;height:2px;
+  background:linear-gradient(90deg,rgba(255,255,255,.9),transparent);
+  border-radius:1px;opacity:0;
+  top:var(--ss-top,6%);left:var(--ss-left,72%);
+  animation:shootStar 9s linear infinite;
+  animation-delay:var(--ss-delay,0s);
+}
+@keyframes shootStar{
+  0%{opacity:0;transform:rotate(32deg) translate(0,0);}
+  3%{opacity:1;}
+  10%{opacity:0;transform:rotate(32deg) translate(-220px,95px);}
+  100%{opacity:0;transform:rotate(32deg) translate(-220px,95px);}
+}
+
+/* ===== TOP UI ===== */
+#top-ui{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(10px);
+  border-bottom:2px solid rgba(255,180,120,0.3);
+  flex-wrap:wrap;
+}
+.ui-card{
+  background:linear-gradient(160deg,rgba(255,255,255,0.96),rgba(255,248,240,0.9));
+  border-radius:14px;
+  padding:6px 14px;display:flex;align-items:center;gap:6px;
+  font-size:0.85rem;font-weight:700;color:#5a3e2b;
+  box-shadow:0 2px 10px rgba(200,100,40,0.12),inset 0 1px 0 rgba(255,255,255,0.8);
+  border:1.5px solid rgba(255,180,120,0.35);
+}
+.ui-card .label{font-family:'Jua',sans-serif;font-size:0.72rem;color:#a07060;}
+.ui-card .value{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#d4380d;}
+#timer-val{color:#e65100;}
+#combo-val{color:#7b1fa2;}
+#fever-bar-wrap{
+  display:none;align-items:center;gap:8px;
+  background:rgba(255,200,255,0.9);border-radius:14px;
+  padding:6px 14px;border:1.5px solid #e040fb;
+}
+#fever-bar-wrap.active{display:flex;}
+.fever-bar-bg{width:80px;height:10px;background:#f3e5f5;border-radius:5px;overflow:hidden;}
+.fever-bar-fill{height:100%;background:linear-gradient(90deg,#e040fb,#ff4081);border-radius:5px;transition:width 0.1s;}
+.bg-toggle{
+  margin-left:auto;background:rgba(255,255,255,0.9);border:1.5px solid rgba(255,180,120,0.4);
+  border-radius:14px;padding:6px 14px;cursor:none;font-size:0.8rem;font-weight:700;color:#5a3e2b;
+  transition:background 0.2s;
+}
+.bg-toggle:hover{background:rgba(255,230,200,0.95);}
+#quit-btn{
+  background:rgba(255,255,255,0.9);border:1.5px solid rgba(220,80,60,0.4);
+  border-radius:14px;padding:6px 12px;cursor:none;font-size:0.8rem;font-weight:700;color:#c62828;
+  transition:background 0.2s,transform 0.12s;
+}
+#quit-btn:hover{background:rgba(255,220,215,0.95);transform:scale(1.05);}
+/* Quit confirm overlay */
+#quit-overlay{
+  position:fixed;inset:0;z-index:5000;
+  background:rgba(0,0,0,0.52);
+  display:flex;align-items:center;justify-content:center;
+  display:none;
+}
+#quit-overlay.show{display:flex;}
+#quit-dialog{
+  background:linear-gradient(160deg,#fff8f5,#fff3ee);
+  border-radius:28px;padding:36px 40px;
+  box-shadow:0 12px 48px rgba(0,0,0,0.28);
+  border:2px solid rgba(255,180,120,0.4);
+  text-align:center;max-width:320px;width:88%;
+}
+#quit-dialog .quit-title{
+  font-family:'Fredoka One',cursive;font-size:1.6rem;color:#e53935;margin-bottom:8px;
+}
+#quit-dialog .quit-sub{font-size:0.88rem;color:#8a6050;margin-bottom:24px;}
+.quit-btn-row{display:flex;gap:12px;justify-content:center;}
+.quit-confirm{
+  flex:1;padding:13px;border-radius:18px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#ef5350,#c62828);
+  color:#fff;font-family:'Jua',sans-serif;font-size:1rem;font-weight:800;
+  box-shadow:0 4px 14px rgba(200,40,40,0.35);transition:transform 0.12s;
+}
+.quit-confirm:hover{transform:translateY(-2px);}
+.quit-cancel{
+  flex:1;padding:13px;border-radius:18px;
+  border:2px solid rgba(200,150,100,0.35);background:rgba(255,255,255,0.9);
+  color:#8a6050;font-family:'Jua',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;
+  transition:background 0.15s;
+}
+.quit-cancel:hover{background:rgba(255,240,230,0.95);}
+
+/* ===== HAMMER LEVEL BADGE ===== */
+#hammer-badge{
+  display:flex;align-items:center;gap:6px;
+  font-family:'Jua',sans-serif;
+  background:linear-gradient(160deg,rgba(255,255,255,0.96),rgba(255,248,240,0.9));
+  border-radius:14px;
+  padding:6px 14px;border:1.5px solid rgba(255,180,120,0.3);
+  font-size:0.8rem;font-weight:800;color:#5a3e2b;
+}
+
+/* ===== GAME FIELD ===== */
+#game-field{
+  margin-top:70px;
+  display:grid;
+  grid-template-columns:repeat(3,112px);
+  grid-template-rows:repeat(3,80px);
+  gap:28px 26px;
+  position:relative;
+}
+
+/* ===== HOLE ===== */
+.hole{
+  width:112px;height:76px;
+  border-radius:50%;
+  position:relative;overflow:hidden;
+  cursor:none;
+  background:
+    /* 입구 위쪽 미세 환경광 */
+    radial-gradient(ellipse at 40% 16%, rgba(160,80,20,0.11) 0%, transparent 28%),
+    /* 굴 내부 – 중앙 칠흑 → 가장자리 짙은 흙색 */
+    radial-gradient(ellipse at 50% 55%,
+      #000000 0%,
+      #0a0300 14%,
+      #170900 30%,
+      #271408 50%,
+      #1c0d04 70%,
+      #110601 100%
+    );
+  box-shadow:
+    inset 0 16px 38px rgba(0,0,0,1),
+    inset 0 6px 16px rgba(0,0,0,0.92),
+    inset 0 -5px 12px rgba(45,22,4,0.3),
+    0 10px 28px rgba(0,0,0,0.62),
+    0 3px 8px  rgba(0,0,0,0.38);
+}
+
+/* 굴 입구 희미한 앰버 반사광 */
+.hole::before{
+  content:'';
+  position:absolute;
+  top:8px;left:22%;
+  width:56%;height:28%;
+  border-radius:50%;
+  background:radial-gradient(ellipse, rgba(160,90,30,0.08) 0%, transparent 100%);
+  pointer-events:none;
+}
+
+/* 굴 내벽 테두리 링 */
+.hole::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  box-shadow:inset 0 0 0 4px rgba(35,16,3,0.45), inset 0 0 0 8px rgba(20,8,1,0.2);
+  pointer-events:none;
+}
+
+/* ===== HOLE RIM (흙 둔덕) ===== */
+.hole-rim{
+  position:absolute;
+  bottom:-16px;left:-22px;right:-22px;
+  height:46px;
+  border-radius:50%;
+  background:
+    /* 햇빛 하이라이트 (왼쪽 위) */
+    radial-gradient(ellipse at 22% 14%, rgba(255,248,195,0.48) 0%, transparent 34%),
+    /* 보조 따뜻한 광 */
+    radial-gradient(ellipse at 70% 26%, rgba(215,175,95,0.14) 0%, transparent 30%),
+    /* 흙 다층 그라데이션 */
+    radial-gradient(ellipse at 50% 42%,
+      #e8b850 0%,
+      #c89438 18%,
+      #a07228 40%,
+      #7a5018 64%,
+      #543a0c 84%,
+      #38260a 100%
+    );
+  box-shadow:
+    0 8px 22px rgba(0,0,0,0.6),
+    0 3px 7px  rgba(0,0,0,0.38),
+    inset 0 4px 9px  rgba(255,230,145,0.32),
+    inset 0 -5px 11px rgba(0,0,0,0.52);
+  z-index:5;
+}
+
+/* 풀잎 – clip-path 다각형으로 실제 풀잎 형태 */
+.hole-rim::before{
+  content:'';
+  position:absolute;
+  top:-15px;left:6%;
+  width:88%;height:20px;
+  background:linear-gradient(to top, #1e6b08 0%, #38a018 45%, #58cc2a 100%);
+  clip-path:polygon(
+    0% 100%, 2.5% 24%, 5% 100%, 8%  8%, 11% 100%, 14% 35%, 17% 100%,
+    20%  6%, 23% 100%, 26% 28%, 29% 100%, 32% 12%, 35% 100%, 38% 40%, 41% 100%,
+    44% 16%, 47% 100%, 50%  4%, 53% 100%, 56% 26%, 59% 100%, 62% 10%, 65% 100%,
+    68% 34%, 71% 100%, 74%  8%, 77% 100%, 80% 22%, 83% 100%, 86% 14%, 89% 100%,
+    92% 30%, 95% 100%, 98% 18%, 100% 100%
+  );
+}
+
+/* 흙 표면 돌/자갈 질감 */
+.hole-rim::after{
+  content:'';
+  position:absolute;
+  top:12px;left:16%;
+  width:68%;height:9px;
+  border-radius:6px;
+  background:
+    radial-gradient(circle at 10% 50%, rgba(45,30,10,0.42) 0%, transparent 28%),
+    radial-gradient(circle at 28% 50%, rgba(70,52,20,0.28) 0%, transparent 26%),
+    radial-gradient(circle at 48% 50%, rgba(40,28,8,0.38)  0%, transparent 28%),
+    radial-gradient(circle at 68% 50%, rgba(65,48,18,0.30) 0%, transparent 26%),
+    radial-gradient(circle at 86% 50%, rgba(45,30,10,0.40) 0%, transparent 28%);
+}
+
+/* ===== MOLE ===== */
+.mole{
+  position:absolute;bottom:0;left:50%;
+  transform:translateX(-50%) translateY(100%);
+  width:72px;height:72px;
+  z-index:10;
+  transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:none;
+}
+.mole.visible{transform:translateX(-50%) translateY(22%);}
+.mole.hit-anim{animation:moleHit 0.35s ease-out forwards;}
+@keyframes moleHit{
+  0%{transform:translateX(-50%) translateY(22%);}
+  30%{transform:translateX(-50%) translateY(4%) scale(0.9,1.1);}
+  100%{transform:translateX(-50%) translateY(100%);}
+}
+
+/* ===== MOLE SVG BASE ===== */
+.mole-body{position:relative;width:72px;height:72px;}
+
+/* 눈 깜빡임 */
+@keyframes eyeBlink{
+  0%,82%,100%{transform:scaleY(1);}
+  88%,94%    {transform:scaleY(0.06);}
+}
+/* 입 미세 움직임 */
+@keyframes mouthBob{
+  0%,100%{transform:scaleY(1)   translateY(0);}
+  50%    {transform:scaleY(1.1) translateY(0.8px);}
+}
+
+.mole.visible .eyes-grp{
+  animation:eyeBlink 3.6s ease-in-out infinite;
+  transform-box:fill-box;
+  transform-origin:50% 50%;
+}
+/* 굴마다 깜빡임 타이밍이 달라지도록 홀 인덱스 활용 */
+.hole:nth-child(2) .mole.visible .eyes-grp{animation-delay:-0.8s;}
+.hole:nth-child(3) .mole.visible .eyes-grp{animation-delay:-1.6s;}
+.hole:nth-child(4) .mole.visible .eyes-grp{animation-delay:-2.4s;}
+.hole:nth-child(5) .mole.visible .eyes-grp{animation-delay:-0.4s;}
+.hole:nth-child(6) .mole.visible .eyes-grp{animation-delay:-1.2s;}
+.hole:nth-child(7) .mole.visible .eyes-grp{animation-delay:-2.0s;}
+.hole:nth-child(8) .mole.visible .eyes-grp{animation-delay:-2.8s;}
+.hole:nth-child(9) .mole.visible .eyes-grp{animation-delay:-1.0s;}
+
+.mole.visible .mouth-grp{
+  animation:mouthBob 2.2s ease-in-out infinite;
+  transform-box:fill-box;
+  transform-origin:50% 0%;
+}
+.hole:nth-child(odd) .mole.visible .mouth-grp{animation-delay:-1.1s;}
+
+/* 히트 중엔 애니메이션 정지 */
+.mole.hit-anim .eyes-grp,
+.mole.hit-anim .mouth-grp{animation:none;}
+
+/* ===== POPUP TEXT ===== */
+.popup-text{
+  position:fixed;pointer-events:none;z-index:999;
+  font-family:'Fredoka One',cursive;
+  font-size:1rem;font-weight:900;
+  animation:popupAnim 0.8s ease-out forwards;
+  text-shadow:0 2px 8px rgba(0,0,0,0.2);
+  white-space:nowrap;
+}
+@keyframes popupAnim{
+  0%{opacity:1;transform:translateY(0) scale(0.6);}
+  30%{transform:translateY(-20px) scale(1.2);}
+  100%{opacity:0;transform:translateY(-50px) scale(0.9);}
+}
+
+/* ===== PARTICLES ===== */
+.particle{
+  position:fixed;pointer-events:none;z-index:998;
+  border-radius:50%;
+  animation:particleAnim 0.7s ease-out forwards;
+}
+@keyframes particleAnim{
+  0%{opacity:1;transform:scale(1) translate(0,0);}
+  100%{opacity:0;transform:scale(0.3) translate(var(--px),var(--py));}
+}
+
+/* ===== FEVER OVERLAY ===== */
+#fever-overlay{
+  position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:radial-gradient(ellipse at center,rgba(200,0,255,0.08) 0%,transparent 70%);
+  display:none;animation:feverPulse 0.6s ease-in-out infinite alternate;
+}
+#fever-overlay.active{display:block;}
+@keyframes feverPulse{from{opacity:0.4;}to{opacity:1;}}
+
+/* ===== END SCREEN ===== */
+#end-screen{
+  background:linear-gradient(135deg,#ffecd2,#fcb69f);
+  flex-direction:column;gap:0;align-items:center;overflow:auto;
+  padding-top:20px;
+}
+.end-title{
+  font-family:'Fredoka One',cursive;
+  font-size:2.2rem;
+  background:linear-gradient(120deg,#ff6b35,#ffcc02,#66bb6a,#42a5f5);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:4px;
+}
+.end-score-display{font-family:'Fredoka One',cursive;font-size:1.15rem;color:#c17b5a;margin-bottom:20px;}
+
+/* ===== PODIUM ===== */
+.podium-wrap{display:flex;align-items:flex-end;gap:12px;justify-content:center;margin-bottom:20px;}
+.podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.podium-avatar{width:64px;height:64px;position:relative;}
+.podium-name{font-size:0.78rem;font-weight:800;color:#5a3e2b;text-align:center;max-width:80px;word-break:break-all;}
+.podium-pts{font-size:0.82rem;font-weight:900;color:#d4380d;}
+.podium-block{
+  border-radius:12px 12px 0 0;width:80px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;font-weight:900;color:rgba(255,255,255,0.9);
+}
+.p1-block{height:110px;background:linear-gradient(180deg,#ffd700,#ff8f00);}
+.p2-block{height:80px;background:linear-gradient(180deg,#e0e0e0,#9e9e9e);}
+.p3-block{height:56px;background:linear-gradient(180deg,#ffcc80,#e65100);}
+
+.rank-table{
+  background:rgba(255,255,255,0.85);border-radius:16px;
+  padding:12px 20px;margin-bottom:16px;
+  width:min(360px,90vw);
+}
+.rank-row{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 0;border-bottom:1px solid rgba(255,180,120,0.2);
+  font-size:0.85rem;font-weight:700;color:#5a3e2b;
+}
+.rank-row:last-child{border-bottom:none;}
+.rank-num{width:24px;font-weight:900;color:#d4380d;}
+.rank-name{flex:1;}
+.rank-pts{font-weight:900;color:#7b1fa2;}
+.rank-me{background:rgba(255,180,80,0.18);border-radius:8px;padding:2px 8px;}
+
+.end-stats-card{
+  background:rgba(255,255,255,0.88);border-radius:16px;
+  padding:10px 20px;margin-bottom:12px;
+  width:min(360px,90vw);
+}
+.stat-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid rgba(255,180,120,0.18);
+  font-size:0.83rem;font-weight:700;color:#5a3e2b;
+}
+.stat-row:last-child{border-bottom:none;}
+.stat-val{font-weight:900;color:#7b1fa2;}
+.combo-row{padding-bottom:8px;margin-bottom:4px;border-bottom:2px solid rgba(255,120,80,0.25)!important;}
+.combo-val{color:#e65100;font-size:1rem;}
+
+.play-again-btn{
+  padding:14px 40px;border-radius:20px;border:none;cursor:none;
+  background:linear-gradient(135deg,#ff7043,#ff5252);
+  color:#fff;font-size:1.1rem;font-weight:800;
+  box-shadow:0 4px 16px rgba(255,80,60,0.35);
+  transition:transform 0.15s;margin-bottom:16px;
+}
+.play-again-btn:hover{transform:translateY(-2px);}
+
+/* ===== GARLAND ===== */
+.garland{
+  display:flex;justify-content:center;gap:6px;padding:6px 0 2px;
+  flex-wrap:wrap;max-width:400px;
+}
+.garland-tri{
+  width:0;height:0;
+  border-left:10px solid transparent;border-right:10px solid transparent;
+  border-top:16px solid;
+  animation:garlandSway 1.2s ease-in-out infinite alternate;
+}
+@keyframes garlandSway{from{transform:rotate(-8deg);}to{transform:rotate(8deg);}}
+
+/* ===== JUMP MOLE ===== */
+.mole-jumping{
+  position:fixed;pointer-events:none;z-index:200;
+  animation:jumpArc 0.9s cubic-bezier(0.33,1,0.68,1) forwards;
+}
+@keyframes jumpArc{
+  0%{transform:translateY(0) rotate(0deg);}
+  40%{transform:translateY(-120px) rotate(-15deg);}
+  100%{transform:translateY(0) rotate(10deg);}
+}
+
+/* ===== TRAY SHAKE ===== */
+@keyframes trayShake{
+  0%,100%{transform:translateX(-50%) translateY(20%) rotate(0deg);}
+  20%{transform:translateX(-50%) translateY(20%) rotate(-8deg);}
+  40%{transform:translateX(-50%) translateY(20%) rotate(8deg);}
+  60%{transform:translateX(-50%) translateY(20%) rotate(-5deg);}
+  80%{transform:translateX(-50%) translateY(20%) rotate(5deg);}
+}
+.tray-shake{animation:trayShake 0.4s ease-out;}
+
+/* ===== SCORE POPUP COLORS ===== */
+.pop-good{color:#ff7043;}
+.pop-perfect{color:#e91e63;}
+.pop-miss{color:#9e9e9e;}
+.pop-fever{color:#ab47bc;}
+.pop-bonus{color:#ffd700;}
+.pop-squirrel{color:#8b6914;}
+
+/* ===== COMBO POPUP ===== */
+.combo-popup{
+  position:fixed;left:50%;
+  transform:translateX(-50%);
+  z-index:997;pointer-events:none;
+  font-weight:900;text-align:center;
+  white-space:nowrap;
+  animation:comboPop 0.95s ease-out forwards;
+  font-family:'Fredoka One',cursive;
+}
+@keyframes comboPop{
+  0%  {opacity:0;transform:translateX(-50%) scale(0.3) translateY(24px);}
+  22% {opacity:1;transform:translateX(-50%) scale(1.35) translateY(-12px);}
+  42% {transform:translateX(-50%) scale(1.0) translateY(0);}
+  68% {opacity:1;transform:translateX(-50%) scale(1.05) translateY(-6px);}
+  100%{opacity:0;transform:translateX(-50%) scale(0.9) translateY(-32px);}
+}
+
+/* 콤보 UI 카드 점프 */
+@keyframes comboJump{
+  0%,100%{transform:scale(1);}
+  40%{transform:scale(1.45);}
+  70%{transform:scale(0.92);}
+}
+.combo-jump{animation:comboJump 0.35s ease-out;}
+
+/* ===== FLYING SQUIRREL ===== */
+.flying-squirrel{
+  position:fixed;z-index:150;cursor:none;
+  animation:squirrelFly var(--sf-dur,4s) linear forwards;
+  top:var(--sf-top,30%);
+}
+@keyframes squirrelFly{
+  from{transform:translateX(var(--sf-from,-80px)) scaleX(var(--sf-sx,1));}
+  to  {transform:translateX(var(--sf-to,calc(100vw + 80px))) scaleX(var(--sf-sx,1));}
+}
+.flying-squirrel.hit-sq{animation:squirrelHit 0.3s ease-out forwards;}
+@keyframes squirrelHit{
+  0%  {transform:scale(1);}
+  40% {transform:scale(1.3) rotate(-20deg);}
+  100%{transform:scale(0) rotate(-40deg);opacity:0;}
+}
+
+/* ===== AUDIO CONTROLS ===== */
+#audio-controls{
+  position:fixed;bottom:20px;right:20px;z-index:10000;
+  display:flex;flex-direction:column;align-items:flex-end;gap:6px;
+}
+#volume-panel{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,0.92);
+  border:1.5px solid rgba(255,180,120,0.4);
+  border-radius:20px;padding:6px 14px;
+  backdrop-filter:blur(8px);
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+  transition:opacity 0.2s,transform 0.2s;
+}
+#volume-panel.hidden-panel{opacity:0;pointer-events:none;transform:translateY(6px);}
+#vol-icon{font-size:1rem;cursor:pointer;user-select:none;}
+#vol-slider{
+  -webkit-appearance:none;appearance:none;
+  width:90px;height:5px;border-radius:4px;
+  background:linear-gradient(90deg,#ff7043 var(--pct,70%),#e0c8b8 var(--pct,70%));
+  outline:none;cursor:pointer;
+}
+#vol-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:#ff7043;
+  box-shadow:0 1px 4px rgba(255,100,60,.4);cursor:pointer;
+}
+#vol-slider::-moz-range-thumb{
+  width:16px;height:16px;border:none;
+  border-radius:50%;background:#ff7043;cursor:pointer;
+}
+#vol-pct{font-size:0.72rem;font-weight:800;color:#a07060;min-width:28px;text-align:right;}
+#audio-btn-row{display:flex;gap:8px;}
+.audio-btn{
+  width:46px;height:46px;border-radius:50%;
+  border:2px solid rgba(255,180,120,0.4);
+  background:rgba(255,255,255,0.88);
+  font-size:1.2rem;cursor:none;
+  transition:transform 0.15s,background 0.15s;
+  backdrop-filter:blur(8px);
+  box-shadow:0 2px 10px rgba(0,0,0,0.12);
+}
+.audio-btn:hover{transform:scale(1.12);background:rgba(255,230,200,0.95);}
+.audio-btn.off{opacity:0.35;filter:grayscale(1);}
+
+/* ===== ONLINE MODE ===== */
+.online-divider{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#b09080;font-size:0.78rem;}
+.online-divider::before,.online-divider::after{content:'';flex:1;height:1px;background:rgba(255,180,120,.3);}
+.online-mode-btn{
+  width:100%;padding:12px;border-radius:20px;border:2px solid #4fc3f7;
+  background:linear-gradient(135deg,#e3f2fd,#bbdefb);
+  color:#0277bd;font-family:'Jua',sans-serif;font-size:1rem;cursor:none;
+  letter-spacing:1px;font-weight:800;transition:all 0.15s;
+}
+.online-mode-btn:hover{background:linear-gradient(135deg,#bbdefb,#90caf9);transform:translateY(-1px);}
+.online-opts{display:flex;gap:10px;margin:10px 0 0;}
+.online-opt-btn{
+  flex:1;padding:12px 8px;border-radius:16px;border:2px solid #81c784;
+  background:linear-gradient(135deg,#e8f5e9,#c8e6c9);
+  color:#2e7d32;font-family:'Jua',sans-serif;font-size:0.9rem;font-weight:800;cursor:none;
+  transition:all 0.15s;
+}
+.online-opt-btn:hover{background:linear-gradient(135deg,#c8e6c9,#a5d6a7);transform:translateY(-1px);}
+/* Lobby screen */
+.lobby-code-display{
+  font-family:'Fredoka One',cursive;font-size:2.8rem;letter-spacing:10px;
+  color:#ff7043;text-align:center;margin:12px 0 4px;
+  text-shadow:0 2px 8px rgba(255,120,60,.25);
+}
+.lobby-code-label{font-size:0.75rem;color:#b09080;text-align:center;margin-bottom:4px;}
+.lobby-status{font-size:0.86rem;color:#7b1fa2;font-weight:800;text-align:center;margin:10px 0 8px;}
+.lobby-player-list{
+  background:rgba(255,248,240,.8);border-radius:14px;
+  padding:8px 14px;margin:6px 0;
+  min-height:72px;max-height:200px;overflow-y:auto;
+}
+.lobby-player-row{
+  display:flex;align-items:center;gap:8px;padding:5px 0;
+  font-size:0.86rem;font-weight:700;color:#5a3e2b;
+  border-bottom:1px solid rgba(255,180,120,.2);
+}
+.lobby-player-row:last-child{border-bottom:none;}
+.lobby-host-badge{font-size:0.68rem;background:#ff7043;color:#fff;border-radius:6px;padding:1px 6px;margin-left:auto;}
+.online-cancel-btn{
+  width:100%;margin-top:8px;padding:10px;border-radius:14px;
+  border:1.5px solid rgba(180,120,80,.3);background:transparent;
+  color:#a07060;font-family:'Jua',sans-serif;font-size:0.86rem;cursor:none;
+  transition:background 0.15s;
+}
+.online-cancel-btn:hover{background:rgba(255,220,200,.3);}
+.copy-hint{font-size:0.72rem;color:#ff7043;cursor:pointer;text-align:center;margin-bottom:6px;text-decoration:underline dotted;}
+/* ===== LOGIN REDESIGN ===== */
+.join-section{
+  background:linear-gradient(135deg,rgba(255,112,67,.10),rgba(233,30,99,.07));
+  border:1.5px solid rgba(255,120,80,.25);
+  border-radius:18px;padding:14px 16px 16px;margin:10px 0 6px;
+}
+.join-section-title{
+  font-family:'Jua',sans-serif;font-size:0.88rem;color:#e64a19;
+  font-weight:800;margin-bottom:8px;letter-spacing:.5px;
+}
+.room-code-big{
+  letter-spacing:8px;text-transform:uppercase;font-size:1.3rem !important;
+  font-family:'Fredoka One',sans-serif !important;text-align:center;
+}
+.join-primary-btn{
+  background:linear-gradient(135deg,#ff7043,#e91e63) !important;
+  font-size:1rem !important;padding:12px !important;
+  box-shadow:0 4px 16px rgba(255,80,60,.35) !important;
+}
+.login-or{
+  display:flex;align-items:center;gap:10px;margin:10px 0 8px;color:#c0a898;font-size:0.78rem;
+}
+.login-or::before,.login-or::after{content:'';flex:1;height:1px;background:rgba(200,160,140,.3);}
+.solo-row{display:flex;flex-direction:column;gap:6px;}
+.solo-btn{
+  background:rgba(255,248,240,.9) !important;color:#8a6050 !important;
+  border:1.5px solid rgba(200,160,130,.35) !important;
+  box-shadow:none !important;font-size:0.9rem !important;padding:10px !important;
+}
+.solo-btn:hover{background:#fff0e8 !important;}
+.create-btn{
+  width:100%;padding:10px;border-radius:14px;border:1.5px dashed rgba(180,130,100,.45);
+  background:transparent;cursor:pointer;font-family:'Jua',sans-serif;
+  font-size:0.88rem;color:#a08070;transition:all 0.15s;
+}
+.create-btn:hover{background:rgba(255,230,210,.4);color:#e64a19;}
+
+/* ===== LOBBY CARD ===== */
+.lobby-card{max-width:400px;padding:28px 24px;}
+#lobby-pw-badge{font-size:0.76rem;color:#e65100;font-weight:800;margin-top:2px;}
+.lobby-share-row{display:flex;align-items:center;gap:14px;margin:10px 0 12px;}
+.lobby-code-box{flex:1;}
+#room-qr-wrap{flex-shrink:0;}
+#room-qr canvas, #room-qr img{border-radius:8px;display:block;}
+.lobby-share-btns{display:flex;gap:8px;margin-bottom:10px;}
+.lobby-share-btn{
+  flex:1;padding:10px 6px;border-radius:14px;border:none;cursor:pointer;
+  font-family:'Jua',sans-serif;font-size:0.88rem;font-weight:800;transition:transform 0.12s;
+}
+.share-main{background:linear-gradient(135deg,#ff7043,#e91e63);color:#fff;
+  box-shadow:0 3px 12px rgba(255,80,60,.35);}
+.share-main:hover{transform:translateY(-1px);}
+.share-dl{background:rgba(255,248,240,.95);border:1.5px solid rgba(255,180,120,.4);color:#8a6050;}
+.share-dl:hover{background:#fff0e8;}
+.url-room-badge{
+  background:linear-gradient(135deg,#fff3e0,#ffe0b2);
+  border:2px solid rgba(255,160,60,.35);border-radius:16px;
+  padding:12px 18px;text-align:center;margin-bottom:6px;
+}
+.url-room-badge .url-room-label{font-size:0.72rem;color:#b09080;margin-bottom:4px;}
+.url-room-badge .url-room-code{
+  font-family:'Fredoka One',cursive;font-size:2rem;letter-spacing:8px;color:#ff7043;
+}
+/* In-game online scoreboard */
+#online-scoreboard{
+  position:fixed;top:66px;right:8px;z-index:200;
+  background:rgba(255,255,255,.9);border-radius:12px;
+  padding:7px 12px;min-width:120px;max-width:160px;
+  border:1.5px solid rgba(255,180,120,.4);
+  backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.1);
+  display:none;
+}
+#online-scoreboard.active{display:block;}
+.obs-title{font-size:0.68rem;font-weight:800;color:#a07060;margin-bottom:5px;border-bottom:1px solid rgba(255,180,120,.3);padding-bottom:3px;}
+.obs-row{font-size:0.78rem;font-weight:700;color:#5a3e2b;display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
+.obs-row.obs-me{color:#d4380d;font-weight:900;}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (hover:none) and (pointer:coarse){
+  #hammer-cursor{display:none!important;}
+  body{cursor:default;}
+  .hole,.login-btn,.hole-ctrl-btn,.audio-btn,.bg-toggle,
+  .online-mode-btn,.online-opt-btn,.online-cancel-btn,
+  .play-again-btn,#quit-btn,.quit-confirm,.quit-cancel,
+  .lobby-share-btn{cursor:pointer;}
+}
+@media (max-width:640px){
+  .login-card{padding:24px 18px;border-radius:24px;}
+  .login-title{font-size:2rem;}
+  .login-subtitle{font-size:0.82rem;margin-bottom:12px;}
+  .mole-preview{width:70px;height:70px;margin:8px auto 16px;}
+  #game-field{margin-top:56px;}
+  #top-ui{padding:5px 8px;gap:4px;}
+  .ui-card{padding:3px 8px;}
+  .ui-card .value{font-size:0.88rem;}
+  .ui-card .label{font-size:0.6rem;}
+  #hammer-badge{padding:3px 8px;font-size:0.68rem;}
+  .bg-toggle{padding:4px 8px;font-size:0.72rem;}
+  #audio-controls{bottom:10px;right:8px;gap:4px;}
+  .audio-btn{width:38px;height:38px;font-size:1rem;}
+  #vol-slider{width:70px;}
+  #volume-panel{padding:5px 10px;}
+  #online-scoreboard{top:54px;right:4px;padding:5px 8px;min-width:100px;}
+  .end-title{font-size:1.6rem;}
+  .podium-block{width:64px;}
+  .p1-block{height:88px!important;}
+  .p2-block{height:64px!important;}
+  .p3-block{height:46px!important;}
+  .podium-avatar{width:52px;height:52px;}
+  .rank-table{padding:8px 12px;}
+  .rank-row{font-size:0.78rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- HAMMER CURSOR -->
+<div id="hammer-cursor">
+  <svg id="hammer-svg" width="88" height="96" viewBox="0 0 88 96">
+    <defs>
+      <linearGradient id="hdlG" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"  stop-color="#6d4c28"/>
+        <stop offset="30%" stop-color="#a0784a"/>
+        <stop offset="55%" stop-color="#c8a06a"/>
+        <stop offset="75%" stop-color="#a0784a"/>
+        <stop offset="100%" stop-color="#6d4c28"/>
+      </linearGradient>
+      <linearGradient id="headG" id="hammer-head-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#f48fb1"/>
+        <stop offset="40%"  stop-color="#e91e63"/>
+        <stop offset="100%" stop-color="#ad1457"/>
+      </linearGradient>
+      <filter id="hammerGlow">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+    </defs>
+    <!-- 손잡이 그림자 -->
+    <rect x="38" y="37" width="12" height="52" rx="5" fill="#3a2010" opacity="0.35"/>
+    <!-- 손잡이 (나뭇결) -->
+    <rect x="36" y="35" width="16" height="52" rx="6" fill="url(#hdlG)"/>
+    <rect x="38" y="35" width="4"  height="52" rx="3" fill="#d4a870" opacity="0.35"/>
+    <line x1="37" y1="44" x2="52" y2="44" stroke="#8a6030" stroke-width="0.8" opacity="0.4"/>
+    <line x1="37" y1="54" x2="52" y2="54" stroke="#8a6030" stroke-width="0.8" opacity="0.4"/>
+    <line x1="37" y1="64" x2="52" y2="64" stroke="#8a6030" stroke-width="0.8" opacity="0.3"/>
+    <!-- 망치 머리 그림자 -->
+    <rect x="9" y="9" width="70" height="34" rx="12" fill="#000" opacity="0.2"/>
+    <!-- 망치 머리 -->
+    <rect id="hammer-head" x="7" y="5" width="74" height="34" rx="12" fill="url(#headG)"/>
+    <!-- 머리 하이라이트 -->
+    <rect x="7" y="5" width="74" height="14" rx="12" fill="#fff" opacity="0.18"/>
+    <rect x="9" y="6" width="70" height="6" rx="10" fill="#fff" opacity="0.22"/>
+    <!-- 머리 양끝 음영 -->
+    <rect x="7"  y="5" width="14" height="34" rx="10" fill="#000" opacity="0.12"/>
+    <rect x="67" y="5" width="14" height="34" rx="10" fill="#000" opacity="0.10"/>
+    <!-- 별 장식 -->
+    <text x="44" y="28" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.85)">★</text>
+    <circle cx="25" cy="22" r="5.5" fill="rgba(255,255,255,0.18)"/>
+    <circle cx="63" cy="22" r="5.5" fill="rgba(255,255,255,0.18)"/>
+  </svg>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="screen">
+  <div class="login-card">
+    <div class="login-title">🐾 MolyPoly!</div>
+    <div class="login-subtitle">귀여운 두더지를 잡아라! ⭐</div>
+    <!-- Preview mole SVG (고화질) -->
+    <div class="mole-preview">
+      <svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="pvBG" cx="38%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#c4a898"/><stop offset="100%" stop-color="#8c6f65"/>
+          </radialGradient>
+          <radialGradient id="pvFG" cx="34%" cy="25%" r="68%">
+            <stop offset="0%" stop-color="#f0c8a5"/><stop offset="100%" stop-color="#c89070"/>
+          </radialGradient>
+          <radialGradient id="pvCK" cx="50%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#pvBG)"/>
+        <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#pvFG)"/>
+        <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="url(#pvCK)"/>
+        <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="url(#pvCK)"/>
+        <!-- 눈 -->
+        <ellipse cx="36" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
+        <ellipse cx="54" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
+        <circle cx="37" cy="43" r="5.8" fill="#1e0e02"/>
+        <circle cx="55" cy="43" r="5.8" fill="#1e0e02"/>
+        <circle cx="37" cy="43" r="4.8" fill="#3e2008"/>
+        <circle cx="55" cy="43" r="4.8" fill="#3e2008"/>
+        <circle cx="37.5" cy="43.5" r="2.8" fill="#060200"/>
+        <circle cx="55.5" cy="43.5" r="2.8" fill="#060200"/>
+        <circle cx="40.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
+        <circle cx="58.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
+        <circle cx="35" cy="46" r="1" fill="#fff" opacity="0.5"/>
+        <circle cx="53" cy="46" r="1" fill="#fff" opacity="0.5"/>
+        <!-- 코+미소 -->
+        <ellipse cx="45" cy="55" rx="4.5" ry="3.2" fill="#b06858"/>
+        <circle cx="43" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+        <circle cx="47" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+        <path d="M37 61 Q45 68 53 61" stroke="#9a5848" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="45" cy="63" rx="5.5" ry="4" fill="#fff"/>
+        <line x1="45" y1="61" x2="45" y2="66" stroke="#e0d8d4" stroke-width="1.2" opacity="0.6"/>
+      </svg>
+    </div>
+    <input type="text" id="nickname-input" class="login-input" placeholder="닉네임을 입력하세요 ✨" maxlength="12"/>
+
+    <!-- ① 방 참여 (항상 보임, 핵심 CTA) -->
+    <div class="join-section">
+      <div class="join-section-title">🚪 방 번호로 참여</div>
+      <input type="text" id="room-code-input" class="login-input room-code-big"
+        placeholder="방 번호 6자리 입력" maxlength="6"
+        autocomplete="off" spellcheck="false"/>
+      <input type="password" id="join-pw-input" class="login-input"
+        placeholder="비밀번호 (없으면 빈칸)" maxlength="12"/>
+      <button class="login-btn join-primary-btn" id="do-join-btn">🚀 방에 참여하기</button>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="login-or"><span>또는</span></div>
+
+    <!-- ② 혼자 하기 / 방 만들기 -->
+    <div class="solo-row">
+      <!-- 두더지 굴 개수 -->
+      <div class="hole-ctrl">
+        <span class="hole-ctrl-label">🕳 두더지 굴의 개수</span>
+        <button class="hole-ctrl-btn" id="hole-dec-btn">−</button>
+        <div><div class="hole-ctrl-val" id="hole-ctrl-val">9개 (3×3)</div></div>
+        <button class="hole-ctrl-btn" id="hole-inc-btn">+</button>
+      </div>
+      <button class="login-btn solo-btn" id="start-btn">🔨 혼자 하기</button>
+      <button class="create-btn" id="create-room-btn">🏠 방 만들기</button>
+    </div>
+
+    <!-- 방 만들기 폼 (토글) -->
+    <div id="create-room-form" style="display:none;margin-top:8px;">
+      <input type="text" id="create-pw-input" class="login-input"
+        placeholder="방 비밀번호 설정 (없으면 빈칸)" maxlength="12"
+        style="margin-bottom:8px;"/>
+      <button class="login-btn" id="do-create-btn">방 만들기! 🏠</button>
+    </div>
+
+    <div style="text-align:center;margin-top:10px;">
+      <button id="login-dl-btn" style="background:none;border:none;cursor:pointer;color:#a09080;font-size:0.76rem;text-decoration:underline;font-family:'Jua',sans-serif;padding:2px 6px;">⬇️ 게임 파일 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY SCREEN -->
+<div id="lobby-screen" class="screen hidden">
+  <div class="login-card lobby-card">
+    <div class="login-title" style="font-size:1.9rem;">🌐 온라인 대전</div>
+    <div class="lobby-status" id="lobby-status">연결 중...</div>
+
+    <!-- 방 번호 + QR (방장용, 기본 표시) -->
+    <div id="lobby-host-share">
+      <div class="lobby-share-row">
+        <!-- 방 번호 -->
+        <div class="lobby-code-box">
+          <div class="lobby-code-label" id="lobby-code-label">방 번호</div>
+          <div class="lobby-code-display" id="lobby-room-code">------</div>
+          <div id="lobby-pw-badge" style="display:none;">🔒 비밀번호 방</div>
+        </div>
+        <!-- QR코드 -->
+        <div id="room-qr-wrap">
+          <div id="room-qr"></div>
+          <div id="room-qr-hint" style="font-size:0.62rem;color:#b09080;text-align:center;margin-top:3px;">QR 스캔</div>
+        </div>
+      </div>
+      <!-- 접속 URL 표시 -->
+      <div id="lobby-url-box" style="display:none;margin:6px 0;padding:7px 10px;background:#fff3e0;border-radius:8px;border:1.5px solid #ffb74d;">
+        <div style="font-size:0.6rem;color:#e65100;font-weight:700;margin-bottom:3px;letter-spacing:.03em;">접속 URL (친구에게 이 주소를 알려주세요)</div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div id="lobby-url-text" style="font-size:0.65rem;color:#bf360c;word-break:break-all;flex:1;font-family:monospace;"></div>
+          <button id="lobby-url-copy" style="background:#e65100;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:0.6rem;cursor:pointer;white-space:nowrap;flex-shrink:0;">복사</button>
+        </div>
+        <div id="lobby-url-badge" style="font-size:0.58rem;margin-top:3px;"></div>
+      </div>
+      <!-- 공유 버튼들 -->
+      <div class="lobby-share-btns">
+        <button class="lobby-share-btn share-main" id="lobby-share-btn">📤 초대장 공유</button>
+        <button class="lobby-share-btn share-dl"   id="lobby-dl-btn">⬇️ 게임 파일</button>
+      </div>
+    </div>
+
+    <!-- 참가자용: 방 번호만 표시 -->
+    <div id="lobby-guest-code" style="display:none;text-align:center;margin:8px 0;">
+      <div class="lobby-code-label" id="lobby-guest-label">참여한 방</div>
+      <div class="lobby-code-display" id="lobby-guest-room-code">------</div>
+    </div>
+
+    <!-- 플레이어 목록 -->
+    <div class="lobby-player-list" id="lobby-player-list">
+      <div style="text-align:center;color:#b09080;font-size:0.82rem;">플레이어를 기다리는 중...</div>
+    </div>
+    <button id="lobby-start-btn" class="login-btn" style="display:none;margin-top:10px;">게임 시작! 🎮</button>
+    <button id="lobby-cancel-btn" class="online-cancel-btn">← 로비 나가기</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen hidden bg-river">
+
+<!-- ══════════════════════════════════════════════
+     BACKGROUND SCENE  (SVG + CSS only, no images)
+══════════════════════════════════════════════ -->
+<div id="bg-scene">
+
+  <!-- ── 강가 · 별밤 숲 (River / Forest Night) ── -->
+  <div class="bg-layer scene-river">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
+         viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="rSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#04051a"/>
+          <stop offset="18%"  stop-color="#0a0d42"/>
+          <stop offset="44%"  stop-color="#0c2e7a"/>
+          <stop offset="70%"  stop-color="#0a5c78"/>
+          <stop offset="100%" stop-color="#054050"/>
+        </linearGradient>
+        <linearGradient id="rWater" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#0a6070" stop-opacity=".92"/>
+          <stop offset="100%" stop-color="#021e28"/>
+        </linearGradient>
+        <radialGradient id="rMoon" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#fffde7" stop-opacity="1"/>
+          <stop offset="45%"  stop-color="#fff9c4" stop-opacity=".65"/>
+          <stop offset="100%" stop-color="#fff9c4" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="rBlur12"><feGaussianBlur stdDeviation="12"/></filter>
+        <filter id="rBlur5"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- Sky -->
+      <rect width="1440" height="900" fill="url(#rSky)"/>
+
+      <!-- Stars -->
+      <circle cx="60"   cy="30"  r="1.5" fill="white" opacity=".9"/>
+      <circle cx="148"  cy="55"  r="1"   fill="white" opacity=".75"/>
+      <circle cx="230"  cy="20"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="310"  cy="48"  r="1"   fill="white" opacity=".8"/>
+      <circle cx="398"  cy="22"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="470"  cy="58"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="542"  cy="35"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="612"  cy="18"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="700"  cy="52"  r="1"   fill="white" opacity=".75"/>
+      <circle cx="772"  cy="28"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="852"  cy="65"  r="1"   fill="white" opacity=".8"/>
+      <circle cx="928"  cy="25"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="1010" cy="45"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="1092" cy="20"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="1170" cy="55"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="1250" cy="35"  r="1"   fill="white" opacity=".75"/>
+      <circle cx="1338" cy="50"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="1402" cy="25"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="90"   cy="95"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="180"  cy="85"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="270"  cy="105" r="1"   fill="white" opacity=".75"/>
+      <circle cx="362"  cy="78"  r="2"   fill="white" opacity=".85"/>
+      <circle cx="452"  cy="100" r="1"   fill="white" opacity=".7"/>
+      <circle cx="522"  cy="88"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="602"  cy="75"  r="1"   fill="white" opacity=".8"/>
+      <circle cx="682"  cy="100" r="2"   fill="white" opacity=".9"/>
+      <circle cx="762"  cy="88"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="842"  cy="95"  r="1"   fill="white" opacity=".75"/>
+      <circle cx="922"  cy="78"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="1002" cy="100" r="1"   fill="white" opacity=".7"/>
+      <circle cx="1082" cy="88"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="1162" cy="75"  r="1"   fill="white" opacity=".8"/>
+      <circle cx="1242" cy="98"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="1322" cy="82"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="1402" cy="96"  r="1"   fill="white" opacity=".75"/>
+
+      <!-- Moon glow -->
+      <circle cx="210" cy="145" r="140" fill="url(#rMoon)"/>
+      <!-- Moon disc -->
+      <circle cx="210" cy="145" r="54"  fill="#fffde7"/>
+      <!-- Craters -->
+      <circle cx="195" cy="135" r="8"   fill="rgba(200,195,168,.24)"/>
+      <circle cx="222" cy="158" r="5"   fill="rgba(200,195,168,.2)"/>
+      <circle cx="232" cy="132" r="4"   fill="rgba(200,195,168,.18)"/>
+
+      <!-- Aurora -->
+      <path d="M-100,240 Q360,115 730,240 Q1100,365 1540,240"
+            stroke="rgba(0,210,130,.2)" stroke-width="95" fill="none" filter="url(#rBlur12)"/>
+      <path d="M-100,295 Q430,165 860,278 Q1220,368 1540,265"
+            stroke="rgba(130,80,255,.15)" stroke-width="70" fill="none" filter="url(#rBlur12)"/>
+      <path d="M-100,335 Q510,205 910,310 Q1210,390 1540,308"
+            stroke="rgba(0,185,210,.1)" stroke-width="52" fill="none" filter="url(#rBlur12)"/>
+
+      <!-- Far mountains -->
+      <path d="M0,900 L0,562 L82,448 L162,510 L262,398 L362,478
+               L480,358 L582,438 L682,368 L782,448 L882,388 L982,460
+               L1082,398 L1182,470 L1282,418 L1382,490 L1440,455 L1440,900 Z"
+            fill="#040b18"/>
+      <!-- Near mountains -->
+      <path d="M0,900 L0,622 L122,510 L242,582 L382,498 L502,565
+               L642,488 L762,555 L882,498 L1002,560 L1122,508
+               L1242,568 L1362,518 L1440,548 L1440,900 Z"
+            fill="#07111e"/>
+
+      <!-- Pine forest silhouette -->
+      <g fill="#03080f">
+        <polygon points="50,710 26,760 74,760"/><polygon points="50,728 18,782 82,782"/><polygon points="50,748 12,800 88,800"/><rect x="44" y="800" width="12" height="18"/>
+        <polygon points="128,698 104,748 152,748"/><polygon points="128,716 98,770 158,770"/><polygon points="128,736 92,790 164,790"/><rect x="122" y="790" width="12" height="18"/>
+        <polygon points="198,724 180,758 216,758"/><polygon points="198,740 176,776 220,776"/><polygon points="198,756 172,794 224,794"/><rect x="193" y="794" width="10" height="14"/>
+        <polygon points="272,704 248,754 296,754"/><polygon points="272,724 242,776 302,776"/><polygon points="272,744 236,796 308,796"/><rect x="266" y="796" width="12" height="18"/>
+        <polygon points="358,686 322,752 394,752"/><polygon points="358,714 318,784 398,784"/><polygon points="358,742 312,810 404,810"/><rect x="351" y="810" width="14" height="22"/>
+        <polygon points="442,708 418,758 466,758"/><polygon points="442,728 412,782 472,782"/><polygon points="442,748 406,802 478,802"/><rect x="436" y="802" width="12" height="16"/>
+        <polygon points="512,726 498,758 526,758"/><polygon points="512,742 492,776 532,776"/><polygon points="512,758 486,794 538,794"/><rect x="507" y="794" width="10" height="14"/>
+        <polygon points="592,698 566,752 618,752"/><polygon points="592,720 558,778 626,778"/><polygon points="592,742 552,802 632,802"/><rect x="586" y="802" width="12" height="18"/>
+        <polygon points="682,682 646,752 718,752"/><polygon points="682,712 640,786 724,786"/><polygon points="682,742 634,810 730,810"/><rect x="675" y="810" width="14" height="20"/>
+        <polygon points="768,704 744,754 792,754"/><polygon points="768,722 738,778 798,778"/><polygon points="768,742 732,800 804,800"/><rect x="762" y="800" width="12" height="16"/>
+        <polygon points="840,720 826,752 854,752"/><polygon points="840,736 820,770 860,770"/><polygon points="840,752 814,788 866,788"/><rect x="835" y="788" width="10" height="14"/>
+        <polygon points="922,696 898,750 946,750"/><polygon points="922,718 890,776 954,776"/><polygon points="922,740 882,802 962,802"/><rect x="916" y="802" width="12" height="18"/>
+        <polygon points="1012,680 974,752 1050,752"/><polygon points="1012,710 970,786 1054,786"/><polygon points="1012,740 964,812 1060,812"/><rect x="1005" y="812" width="14" height="22"/>
+        <polygon points="1102,698 1078,752 1126,752"/><polygon points="1102,720 1070,778 1134,778"/><polygon points="1102,742 1062,802 1142,802"/><rect x="1096" y="802" width="12" height="18"/>
+        <polygon points="1178,718 1162,752 1194,752"/><polygon points="1178,736 1156,772 1200,772"/><polygon points="1178,754 1150,792 1206,792"/><rect x="1173" y="792" width="10" height="14"/>
+        <polygon points="1258,704 1232,758 1284,758"/><polygon points="1258,726 1226,782 1290,782"/><polygon points="1258,748 1218,806 1298,806"/><rect x="1252" y="806" width="12" height="16"/>
+        <polygon points="1348,682 1310,754 1386,754"/><polygon points="1348,714 1304,790 1392,790"/><polygon points="1348,746 1296,814 1400,814"/><rect x="1341" y="814" width="14" height="20"/>
+        <polygon points="1422,706 1398,758 1446,758"/><polygon points="1422,728 1392,784 1452,784"/><polygon points="1422,750 1384,808 1460,808"/><rect x="1416" y="808" width="12" height="18"/>
+      </g>
+
+      <!-- Water -->
+      <rect x="0" y="808" width="1440" height="92" fill="url(#rWater)"/>
+      <!-- Shimmer -->
+      <line x1="80"   y1="825" x2="240"  y2="825" stroke="rgba(255,255,255,.22)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="355"  y1="838" x2="490"  y2="838" stroke="rgba(255,255,255,.17)" stroke-width="1"/>
+      <line x1="605"  y1="828" x2="782"  y2="828" stroke="rgba(255,255,255,.22)" stroke-width="1.5"/>
+      <line x1="900"  y1="842" x2="1022" y2="842" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <line x1="1102" y1="826" x2="1282" y2="826" stroke="rgba(255,255,255,.2)"  stroke-width="1.5"/>
+      <line x1="1348" y1="840" x2="1432" y2="840" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <!-- Moon reflection -->
+      <ellipse cx="210" cy="845" rx="72" ry="9"  fill="rgba(255,249,196,.28)"/>
+      <ellipse cx="210" cy="860" rx="46" ry="6"  fill="rgba(255,249,196,.18)"/>
+      <ellipse cx="210" cy="872" rx="24" ry="4"  fill="rgba(255,249,196,.1)"/>
+    </svg>
+
+    <!-- Fireflies -->
+    <span class="ff" style="left:14%;top:68%;--dur:5s;  --dx1:32px;--dy1:-40px;--dx2:-22px;--dy2:-64px;--dx3:46px;--dy3:-30px;--ff-d:0s;"></span>
+    <span class="ff" style="left:27%;top:72%;--dur:6.2s;--dx1:-26px;--dy1:-50px;--dx2:36px; --dy2:-32px;--dx3:-42px;--dy3:-60px;--ff-d:1.5s;"></span>
+    <span class="ff" style="left:44%;top:66%;--dur:4.5s;--dx1:42px;--dy1:-36px;--dx2:-32px;--dy2:-56px;--dx3:22px;--dy3:-46px;--ff-d:0.8s;"></span>
+    <span class="ff" style="left:61%;top:70%;--dur:5.5s;--dx1:-36px;--dy1:-46px;--dx2:26px; --dy2:-62px;--dx3:-22px;--dy3:-36px;--ff-d:2.2s;"></span>
+    <span class="ff" style="left:74%;top:65%;--dur:4.8s;--dx1:22px;--dy1:-56px;--dx2:-42px;--dy2:-32px;--dx3:36px;--dy3:-52px;--ff-d:0.4s;"></span>
+    <span class="ff" style="left:87%;top:73%;--dur:6.2s;--dx1:-46px;--dy1:-42px;--dx2:32px; --dy2:-66px;--dx3:-26px;--dy3:-36px;--ff-d:1.8s;"></span>
+    <span class="ff" style="left:34%;top:75%;--dur:5.2s;--dx1:36px;--dy1:-32px;--dx2:-52px;--dy2:-56px;--dx3:22px;--dy3:-42px;--ff-d:3.1s;"></span>
+    <span class="ff" style="left:54%;top:78%;--dur:4.2s;--dx1:-22px;--dy1:-62px;--dx2:46px; --dy2:-26px;--dx3:-36px;--dy3:-52px;--ff-d:2.5s;"></span>
+  </div>
+
+  <!-- ── 사막 · 황금 석양 (Desert Golden Sunset) ── -->
+  <div class="bg-layer scene-desert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
+         viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#0c001e"/>
+          <stop offset="16%"  stop-color="#1a0040"/>
+          <stop offset="36%"  stop-color="#6b0062"/>
+          <stop offset="56%"  stop-color="#c74400"/>
+          <stop offset="76%"  stop-color="#e87808"/>
+          <stop offset="90%"  stop-color="#f5a520"/>
+          <stop offset="100%" stop-color="#ffd060"/>
+        </linearGradient>
+        <radialGradient id="dSun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#fffce0" stop-opacity="1"/>
+          <stop offset="28%"  stop-color="#ffd700" stop-opacity=".9"/>
+          <stop offset="58%"  stop-color="#ff8c00" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#ff4500" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="dBlur8" ><feGaussianBlur stdDeviation="8"/></filter>
+        <filter id="dBlur22"><feGaussianBlur stdDeviation="22"/></filter>
+      </defs>
+
+      <!-- Sky -->
+      <rect width="1440" height="900" fill="url(#dSky)"/>
+
+      <!-- Stars (top) -->
+      <circle cx="80"   cy="32"  r="1.5" fill="white" opacity=".85"/>
+      <circle cx="162"  cy="18"  r="1"   fill="white" opacity=".75"/>
+      <circle cx="242"  cy="46"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="332"  cy="26"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="420"  cy="14"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="502"  cy="40"  r="1"   fill="white" opacity=".65"/>
+      <circle cx="582"  cy="22"  r="1.5" fill="white" opacity=".75"/>
+      <circle cx="660"  cy="50"  r="1"   fill="white" opacity=".6"/>
+      <circle cx="740"  cy="16"  r="2"   fill="white" opacity=".85"/>
+      <circle cx="820"  cy="38"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="902"  cy="22"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="980"  cy="52"  r="1"   fill="white" opacity=".65"/>
+      <circle cx="1060" cy="28"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="1150" cy="14"  r="1.5" fill="white" opacity=".8"/>
+      <circle cx="1232" cy="44"  r="1"   fill="white" opacity=".7"/>
+      <circle cx="1312" cy="20"  r="1.5" fill="white" opacity=".75"/>
+      <circle cx="1392" cy="48"  r="2"   fill="white" opacity=".85"/>
+      <!-- Faint 2nd row -->
+      <circle cx="100"  cy="80"  r="1"   fill="white" opacity=".42"/>
+      <circle cx="300"  cy="88"  r="1.5" fill="white" opacity=".38"/>
+      <circle cx="500"  cy="74"  r="1"   fill="white" opacity=".34"/>
+      <circle cx="700"  cy="86"  r="1"   fill="white" opacity=".38"/>
+      <circle cx="900"  cy="70"  r="1.5" fill="white" opacity=".32"/>
+      <circle cx="1100" cy="84"  r="1"   fill="white" opacity=".38"/>
+      <circle cx="1300" cy="76"  r="1.5" fill="white" opacity=".34"/>
+
+      <!-- Sun glow -->
+      <circle cx="790" cy="690" r="300" fill="url(#dSun)" filter="url(#dBlur22)"/>
+      <!-- Sun disc -->
+      <circle cx="790" cy="690" r="82"  fill="#fff8dc" filter="url(#dBlur8)"/>
+      <circle cx="790" cy="690" r="66"  fill="#fffde7"/>
+      <!-- Sun rays -->
+      <line x1="790" y1="605" x2="790" y2="502" stroke="rgba(255,220,100,.14)" stroke-width="3"/>
+      <line x1="852" y1="628" x2="932" y2="562" stroke="rgba(255,220,100,.11)" stroke-width="2"/>
+      <line x1="728" y1="628" x2="648" y2="562" stroke="rgba(255,220,100,.11)" stroke-width="2"/>
+      <line x1="872" y1="690" x2="995" y2="668" stroke="rgba(255,220,100,.1)"  stroke-width="2"/>
+      <line x1="708" y1="690" x2="585" y2="668" stroke="rgba(255,220,100,.1)"  stroke-width="2"/>
+
+      <!-- Dune back -->
+      <path d="M0,900 L0,602 Q182,510 402,572 Q622,634 842,532
+               Q1022,452 1202,522 Q1342,562 1440,502 L1440,900 Z"
+            fill="#7a3a10"/>
+      <!-- Dune mid -->
+      <path d="M0,900 L0,682 Q222,600 482,662 Q742,722 1002,622
+               Q1202,552 1440,642 L1440,900 Z"
+            fill="#ae5c1a"/>
+      <!-- Dune front -->
+      <path d="M0,900 L0,772 Q282,702 602,762 Q902,822 1202,732
+               Q1362,692 1440,742 L1440,900 Z"
+            fill="#c8782a"/>
+      <!-- Sandy foreground -->
+      <path d="M0,900 L0,858 Q360,832 720,858 Q1080,882 1440,858 L1440,900 Z"
+            fill="#d4962e"/>
+
+      <!-- Palm tree 1 -->
+      <g>
+        <path d="M290,812 Q282,752 286,702 Q290,662 300,642"
+              stroke="#4a2800" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M300,642 Q258,604 218,594 Q242,600 272,622" fill="#1b5e20" opacity=".9"/>
+        <path d="M300,642 Q270,586 240,568 Q258,578 285,608" fill="#2e7d32" opacity=".9"/>
+        <path d="M300,642 Q302,594 285,574 Q294,590 302,618" fill="#1b5e20" opacity=".9"/>
+        <path d="M300,642 Q326,600 322,576 Q318,594 305,618" fill="#2e7d32" opacity=".9"/>
+        <path d="M300,642 Q348,608 366,594 Q348,602 326,620" fill="#1b5e20" opacity=".9"/>
+        <path d="M300,642 Q352,582 378,572 Q360,584 334,610" fill="#2e7d32" opacity=".9"/>
+        <circle cx="296" cy="652" r="6" fill="#3e2000"/>
+        <circle cx="308" cy="646" r="5" fill="#3e2000"/>
+      </g>
+
+      <!-- Palm tree 2 (right, smaller) -->
+      <g>
+        <path d="M1162,822 Q1168,764 1166,716 Q1162,678 1154,660"
+              stroke="#4a2800" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <path d="M1154,660 Q1118,626 1082,616 Q1102,622 1128,642" fill="#1b5e20" opacity=".9"/>
+        <path d="M1154,660 Q1130,602 1102,586 Q1118,596 1142,622" fill="#2e7d32" opacity=".9"/>
+        <path d="M1154,660 Q1156,610 1140,592 Q1148,608 1156,632" fill="#1b5e20" opacity=".9"/>
+        <path d="M1154,660 Q1178,616 1178,596 Q1172,612 1158,634" fill="#2e7d32" opacity=".9"/>
+        <path d="M1154,660 Q1198,622 1212,610 Q1196,618 1174,636" fill="#1b5e20" opacity=".9"/>
+        <circle cx="1150" cy="670" r="5" fill="#3e2000"/>
+        <circle cx="1162" cy="664" r="4" fill="#3e2000"/>
+      </g>
+
+      <!-- Distant camel silhouette -->
+      <g fill="#3a1a06" opacity=".7">
+        <ellipse cx="680" cy="668" rx="38" ry="20"/>
+        <ellipse cx="668" cy="648" rx="16" ry="24"/>
+        <ellipse cx="692" cy="642" rx="14" ry="22"/>
+        <rect x="655" y="686" width="10" height="20" rx="3"/>
+        <rect x="672" y="686" width="10" height="20" rx="3"/>
+        <ellipse cx="662" cy="636" rx="9" ry="6"/>
+      </g>
+    </svg>
+
+    <!-- Shooting stars -->
+    <div class="shooting-star" style="--ss-delay:1.5s;--ss-top:5%;--ss-left:74%;"></div>
+    <div class="shooting-star" style="--ss-delay:6.5s;--ss-top:9%;--ss-left:42%;"></div>
+  </div>
+
+  <!-- ── 벚꽃 봄날 (Cherry Blossom Spring) ── -->
+  <div class="bg-layer scene-sakura">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="skSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#b8dcff"/>
+          <stop offset="35%"  stop-color="#daf0ff"/>
+          <stop offset="68%"  stop-color="#ffd6e8"/>
+          <stop offset="100%" stop-color="#ffb8cc"/>
+        </linearGradient>
+        <radialGradient id="skSun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#fffde7"/>
+          <stop offset="35%"  stop-color="#fff9c4" stop-opacity=".8"/>
+          <stop offset="100%" stop-color="#ffe082" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="skBlur18"><feGaussianBlur stdDeviation="18"/></filter>
+        <filter id="skBlur5"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+      <rect width="1440" height="900" fill="url(#skSky)"/>
+      <!-- Sun haze -->
+      <circle cx="1180" cy="170" r="210" fill="url(#skSun)" filter="url(#skBlur18)"/>
+      <circle cx="1180" cy="170" r="52"  fill="#fffde7" filter="url(#skBlur5)"/>
+      <circle cx="1180" cy="170" r="40"  fill="#fffef4"/>
+      <!-- Clouds -->
+      <ellipse cx="360"  cy="130" rx="140" ry="32" fill="#fff" opacity=".48" filter="url(#skBlur5)"/>
+      <ellipse cx="620"  cy="100" rx="100" ry="24" fill="#fff" opacity=".38" filter="url(#skBlur5)"/>
+      <ellipse cx="820"  cy="140" rx="160" ry="30" fill="#fff" opacity=".42" filter="url(#skBlur5)"/>
+      <ellipse cx="1040" cy="108" rx="110" ry="26" fill="#fff" opacity=".36" filter="url(#skBlur5)"/>
+      <!-- Distant mountains (lavender) -->
+      <path d="M0,900 L0,520 L120,408 L240,484 L380,372 L520,454 L660,382 L780,448 L920,390 L1060,460 L1180,400 L1320,468 L1440,430 L1440,900Z" fill="#c0a0d4" opacity=".45"/>
+      <path d="M0,900 L0,590 L200,482 L400,558 L580,484 L760,548 L940,484 L1120,550 L1300,494 L1440,550 L1440,900Z" fill="#d0b8e0" opacity=".38"/>
+      <!-- Green hills -->
+      <path d="M0,900 L0,660 Q240,578 480,648 Q720,718 960,638 Q1200,562 1440,628L1440,900Z" fill="#7cb842"/>
+      <path d="M0,900 L0,726 Q220,666 460,716 Q700,768 940,690 Q1180,614 1440,690L1440,900Z" fill="#8dc63f"/>
+      <path d="M0,900 L0,812 Q360,780 720,808 Q1080,836 1440,808L1440,900Z" fill="#a8d060"/>
+      <!-- Path -->
+      <path d="M640,900 Q660,848 672,816 Q684,784 696,816 Q708,848 720,900Z" fill="#d4b880" opacity=".65"/>
+
+      <!-- 벚꽃 나무 1 (왼쪽) -->
+      <path d="M148,878 Q144,820 148,770 Q152,732 140,692" stroke="#5d3a1a" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <path d="M140,692 Q118,660 98,644" stroke="#5d3a1a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M140,692 Q138,660 148,636" stroke="#5d3a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M140,692 Q164,658 180,644" stroke="#5d3a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <ellipse cx="96"  cy="620" rx="50" ry="42" fill="#ff88aa" opacity=".9"/>
+      <ellipse cx="120" cy="600" rx="44" ry="36" fill="#ffc0d4" opacity=".88"/>
+      <ellipse cx="148" cy="612" rx="54" ry="44" fill="#ffaac0" opacity=".92"/>
+      <ellipse cx="146" cy="588" rx="40" ry="34" fill="#ffd4e6" opacity=".8"/>
+      <ellipse cx="180" cy="618" rx="48" ry="40" fill="#ff8aaa" opacity=".88"/>
+      <ellipse cx="186" cy="598" rx="36" ry="30" fill="#ffb8cc" opacity=".82"/>
+      <ellipse cx="142" cy="600" rx="68" ry="56" fill="#ffe4f0" opacity=".22"/>
+
+      <!-- 벚꽃 나무 2 (중앙 왼쪽, 큰 나무) -->
+      <path d="M462,888 Q454,822 460,764 Q466,720 452,672" stroke="#5d3a1a" stroke-width="24" fill="none" stroke-linecap="round"/>
+      <path d="M452,672 Q420,634 390,612" stroke="#5d3a1a" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <path d="M452,672 Q448,638 462,608" stroke="#5d3a1a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M452,672 Q484,636 508,620" stroke="#5d3a1a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M452,672 Q460,700 468,726" stroke="#5d3a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <ellipse cx="388" cy="590" rx="60" ry="50" fill="#ff88aa" opacity=".92"/>
+      <ellipse cx="418" cy="566" rx="52" ry="44" fill="#ffbcd2" opacity=".88"/>
+      <ellipse cx="454" cy="578" rx="66" ry="54" fill="#ffaac0" opacity=".94"/>
+      <ellipse cx="452" cy="550" rx="48" ry="40" fill="#ffd0e4" opacity=".82"/>
+      <ellipse cx="490" cy="582" rx="58" ry="48" fill="#ff8aaa" opacity=".90"/>
+      <ellipse cx="512" cy="560" rx="46" ry="38" fill="#ffb8cc" opacity=".84"/>
+      <ellipse cx="500" cy="542" rx="40" ry="34" fill="#ffdcec" opacity=".78"/>
+      <ellipse cx="450" cy="558" rx="80" ry="64" fill="#ffe8f2" opacity=".20"/>
+
+      <!-- 벚꽃 나무 3 (오른쪽) -->
+      <path d="M1252,880 Q1246,820 1250,768 Q1254,728 1240,684" stroke="#5d3a1a" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <path d="M1240,684 Q1210,648 1188,630" stroke="#5d3a1a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M1240,684 Q1236,650 1248,624" stroke="#5d3a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M1240,684 Q1270,650 1290,636" stroke="#5d3a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <ellipse cx="1186" cy="608" rx="52" ry="44" fill="#ffc0d4" opacity=".9"/>
+      <ellipse cx="1214" cy="586" rx="46" ry="38" fill="#ff99b8" opacity=".88"/>
+      <ellipse cx="1246" cy="598" rx="58" ry="48" fill="#ffaac0" opacity=".92"/>
+      <ellipse cx="1244" cy="572" rx="44" ry="36" fill="#ffd8e8" opacity=".80"/>
+      <ellipse cx="1280" cy="602" rx="52" ry="42" fill="#ff88aa" opacity=".88"/>
+      <ellipse cx="1284" cy="578" rx="40" ry="32" fill="#ffbbcc" opacity=".82"/>
+      <ellipse cx="1244" cy="566" rx="70" ry="56" fill="#ffe0ee" opacity=".20"/>
+
+      <!-- 오른쪽 끝 작은 나무 -->
+      <path d="M1408,892 Q1404,852 1406,820 Q1408,798 1400,776" stroke="#5d3a1a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <ellipse cx="1398" cy="752" rx="38" ry="32" fill="#ffaac0" opacity=".9"/>
+      <ellipse cx="1414" cy="738" rx="32" ry="26" fill="#ffc8d8" opacity=".85"/>
+      <ellipse cx="1400" cy="734" rx="44" ry="36" fill="#ff8baa" opacity=".88"/>
+    </svg>
+    <!-- 떨어지는 꽃잎 -->
+    <span class="petal" style="left:5%;top:-2%;  --pw:11px;--ph:8px;--pc:#ffacc4;--pd:6.5s;--pde:0s;   --px:70px;--pr:500deg;"></span>
+    <span class="petal" style="left:12%;top:-4%; --pw:8px; --ph:6px;--pc:#ffc0d0;--pd:7.2s;--pde:1.2s; --px:-50px;--pr:420deg;"></span>
+    <span class="petal" style="left:22%;top:-1%; --pw:12px;--ph:9px;--pc:#ff88aa;--pd:5.8s;--pde:0.6s; --px:90px;--pr:600deg;"></span>
+    <span class="petal" style="left:33%;top:-3%; --pw:9px; --ph:7px;--pc:#ffd0e0;--pd:6.8s;--pde:2.0s; --px:-70px;--pr:380deg;"></span>
+    <span class="petal" style="left:45%;top:-2%; --pw:10px;--ph:7px;--pc:#ffaac0;--pd:6.2s;--pde:0.8s; --px:60px;--pr:550deg;"></span>
+    <span class="petal" style="left:57%;top:-5%; --pw:13px;--ph:9px;--pc:#ffc4d8;--pd:7.5s;--pde:3.0s; --px:-80px;--pr:460deg;"></span>
+    <span class="petal" style="left:66%;top:-2%; --pw:8px; --ph:6px;--pc:#ff99b8;--pd:5.5s;--pde:1.8s; --px:100px;--pr:520deg;"></span>
+    <span class="petal" style="left:74%;top:-4%; --pw:11px;--ph:8px;--pc:#ffd4e4;--pd:6.9s;--pde:0.4s; --px:-60px;--pr:440deg;"></span>
+    <span class="petal" style="left:82%;top:-1%; --pw:9px; --ph:7px;--pc:#ffaac0;--pd:6.0s;--pde:2.5s; --px:80px;--pr:580deg;"></span>
+    <span class="petal" style="left:91%;top:-3%; --pw:12px;--ph:8px;--pc:#ffb8cc;--pd:7.0s;--pde:1.0s; --px:-90px;--pr:490deg;"></span>
+    <span class="petal" style="left:18%;top:-6%; --pw:7px; --ph:5px;--pc:#ffc8d8;--pd:5.2s;--pde:3.5s; --px:50px;--pr:620deg;"></span>
+    <span class="petal" style="left:50%;top:-3%; --pw:10px;--ph:8px;--pc:#ff80a8;--pd:6.4s;--pde:4.0s; --px:-40px;--pr:400deg;"></span>
+    <span class="petal" style="left:78%;top:-5%; --pw:8px; --ph:6px;--pc:#ffdce8;--pd:7.8s;--pde:2.2s; --px:70px;--pr:540deg;"></span>
+  </div>
+
+  <!-- ── 해저 바다 (Underwater Ocean) ── -->
+  <div class="bg-layer scene-ocean">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="ocSea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#0060b0"/>
+          <stop offset="25%"  stop-color="#004888"/>
+          <stop offset="55%"  stop-color="#002860"/>
+          <stop offset="82%"  stop-color="#001238"/>
+          <stop offset="100%" stop-color="#000820"/>
+        </linearGradient>
+        <linearGradient id="ocSand" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#c8aa72"/>
+          <stop offset="100%" stop-color="#8a7040"/>
+        </linearGradient>
+        <filter id="ocBlur8"><feGaussianBlur stdDeviation="8"/></filter>
+        <filter id="ocBlur20"><feGaussianBlur stdDeviation="20"/></filter>
+      </defs>
+      <rect width="1440" height="900" fill="url(#ocSea)"/>
+      <!-- 수면 상단 빛 -->
+      <rect x="0" y="0" width="1440" height="55" fill="rgba(0,180,230,.22)"/>
+      <rect x="0" y="0" width="1440" height="25" fill="rgba(100,220,255,.16)"/>
+      <!-- 빛 기둥 -->
+      <path d="M180,0  L 60,900" stroke="rgba(140,220,255,.07)" stroke-width="110" fill="none"/>
+      <path d="M460,0  L370,900" stroke="rgba(140,220,255,.06)" stroke-width="80"  fill="none"/>
+      <path d="M760,0  L690,900" stroke="rgba(140,220,255,.08)" stroke-width="120" fill="none"/>
+      <path d="M1020,0 L960,900" stroke="rgba(140,220,255,.06)" stroke-width="90"  fill="none"/>
+      <path d="M1300,0 L1240,900" stroke="rgba(140,220,255,.07)" stroke-width="100" fill="none"/>
+      <!-- 바닥 모래 -->
+      <path d="M0,900 L0,826 Q180,806 360,820 Q540,834 720,816 Q900,800 1080,814 Q1260,828 1440,812L1440,900Z" fill="url(#ocSand)"/>
+      <!-- 바위 -->
+      <ellipse cx="110"  cy="848" rx="65" ry="28" fill="#2e2214" opacity=".82"/>
+      <ellipse cx="330"  cy="858" rx="44" ry="20" fill="#2e2214" opacity=".70"/>
+      <ellipse cx="860"  cy="850" rx="58" ry="24" fill="#2e2214" opacity=".78"/>
+      <ellipse cx="1220" cy="855" rx="50" ry="22" fill="#2e2214" opacity=".72"/>
+      <ellipse cx="1400" cy="840" rx="36" ry="16" fill="#2e2214" opacity=".65"/>
+      <!-- 산호 1 (빨간/오렌지) -->
+      <g>
+        <path d="M75,832 Q72,800 70,775 Q68,758 66,746" stroke="#cc3820" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M70,775 Q52,756 42,748" stroke="#cc3820" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M70,775 Q88,758 98,750" stroke="#cc3820" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle cx="66"  cy="746" r="9"  fill="#e84828"/>
+        <circle cx="42"  cy="748" r="7"  fill="#cc3018"/>
+        <circle cx="98"  cy="750" r="7"  fill="#e84828"/>
+      </g>
+      <g>
+        <path d="M140,830 Q136,792 132,762 Q130,742 128,730" stroke="#e06030" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M132,762 Q110,742 100,732" stroke="#e06030" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M132,762 Q154,744 164,736" stroke="#e06030" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M128,730 Q112,714 106,706" stroke="#e06030" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M128,730 Q146,716 152,708" stroke="#e06030" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle cx="128" cy="730" r="10" fill="#ff7038"/>
+        <circle cx="100" cy="732" r="8"  fill="#e85028"/>
+        <circle cx="164" cy="736" r="8"  fill="#ff7038"/>
+        <circle cx="106" cy="706" r="7"  fill="#e85028"/>
+        <circle cx="152" cy="708" r="7"  fill="#ff7038"/>
+      </g>
+      <!-- 부채 산호 (분홍) -->
+      <g opacity=".85">
+        <path d="M1358,834 Q1354,798 1350,770" stroke="#c860a0" stroke-width="5" fill="none"/>
+        <path d="M1350,770 L1314,738 L1320,728 L1350,760 L1382,730 L1388,740 L1350,770" fill="none" stroke="#c860a0" stroke-width="3"/>
+        <path d="M1350,760 L1326,736 L1330,726" fill="none" stroke="#e070b0" stroke-width="2" opacity=".7"/>
+        <path d="M1350,760 L1374,738 L1370,728" fill="none" stroke="#e070b0" stroke-width="2" opacity=".7"/>
+        <circle cx="1350" cy="770" r="6" fill="#c860a0"/>
+      </g>
+      <!-- 보라 산호 -->
+      <g>
+        <path d="M460,840 Q458,818 454,800" stroke="#8844cc" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M454,800 Q440,786 432,778" stroke="#8844cc" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M454,800 Q468,786 476,778" stroke="#8844cc" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="454" cy="800" r="7" fill="#9955dd"/>
+        <circle cx="432" cy="778" r="6" fill="#8844cc"/>
+        <circle cx="476" cy="778" r="6" fill="#9955dd"/>
+      </g>
+      <!-- 해초 -->
+      <path d="M270,832 Q248,800 268,768 Q288,736 266,702 Q244,668 264,636" stroke="#1e7a28" stroke-width="7" fill="none" stroke-linecap="round" class="sway"/>
+      <path d="M310,830 Q292,800 312,770 Q332,742 312,712" stroke="#166820" stroke-width="5" fill="none" stroke-linecap="round" class="sway" style="animation-delay:.5s"/>
+      <path d="M1095,836 Q1074,808 1094,776 Q1114,746 1094,714 Q1074,682 1094,650" stroke="#1e7a28" stroke-width="7" fill="none" stroke-linecap="round" class="sway" style="animation-delay:.9s"/>
+      <path d="M1135,832 Q1116,804 1136,772 Q1156,742 1136,712" stroke="#166820" stroke-width="5" fill="none" stroke-linecap="round" class="sway" style="animation-delay:1.4s"/>
+      <path d="M680,838 Q660,812 680,782 Q700,752 680,720" stroke="#228830" stroke-width="6" fill="none" stroke-linecap="round" class="sway" style="animation-delay:.3s"/>
+      <!-- 물고기 1 (노란) -->
+      <g class="fish-r" style="--fd:13s;--fde:0s;">
+        <ellipse cx="0" cy="400" rx="30" ry="17" fill="#f5c418"/>
+        <polygon points="30,400 56,384 56,416" fill="#e8b010"/>
+        <ellipse cx="0" cy="400" rx="30" ry="17" fill="none" stroke="#e8a800" stroke-width="1.5" opacity=".5"/>
+        <circle cx="-12" cy="396" r="4"  fill="#111"/>
+        <circle cx="-11" cy="395" r="1.5" fill="#fff"/>
+        <path d="M-6,406 Q2,413 10,406" stroke="#c8900a" stroke-width="2" fill="none"/>
+      </g>
+      <!-- 물고기 2 (파란, 반대방향) -->
+      <g class="fish-l" style="--fd:10s;--fde:3s;">
+        <ellipse cx="1440" cy="320" rx="26" ry="15" fill="#4488ff"/>
+        <polygon points="1414,320 1390,306 1390,334" fill="#2266ee"/>
+        <circle cx="1454" cy="316" r="3.5" fill="#111"/>
+        <circle cx="1455" cy="315" r="1.5" fill="#fff"/>
+        <path d="M1442,326 Q1448,331 1454,326" stroke="#1a55cc" stroke-width="1.5" fill="none"/>
+      </g>
+      <!-- 물고기 3 (주황) -->
+      <g class="fish-r" style="--fd:17s;--fde:6s;">
+        <ellipse cx="0" cy="550" rx="22" ry="12" fill="#ff7022"/>
+        <polygon points="22,550 42,540 42,560" fill="#e05010"/>
+        <circle cx="-8"  cy="547" r="3"  fill="#111"/>
+        <circle cx="-7"  cy="546" r="1.2" fill="#fff"/>
+      </g>
+      <!-- 해파리 -->
+      <g class="jelly" style="animation-delay:.5s;">
+        <ellipse cx="820" cy="240" rx="32" ry="24" fill="#cc88ff" opacity=".45"/>
+        <ellipse cx="820" cy="240" rx="32" ry="24" fill="none" stroke="#aa66ee" stroke-width="1.5"/>
+        <line x1="806" y1="264" x2="798" y2="306" stroke="#cc88ff" stroke-width="1.5" opacity=".6"/>
+        <line x1="814" y1="264" x2="808" y2="314" stroke="#cc88ff" stroke-width="1.5" opacity=".6"/>
+        <line x1="820" y1="264" x2="820" y2="320" stroke="#cc88ff" stroke-width="1.5" opacity=".6"/>
+        <line x1="826" y1="264" x2="832" y2="314" stroke="#cc88ff" stroke-width="1.5" opacity=".6"/>
+        <line x1="834" y1="264" x2="842" y2="306" stroke="#cc88ff" stroke-width="1.5" opacity=".6"/>
+        <ellipse cx="820" cy="248" rx="24" ry="8" fill="rgba(255,255,255,.18)"/>
+      </g>
+      <g class="jelly" style="animation-delay:1.4s;">
+        <ellipse cx="380" cy="340" rx="24" ry="18" fill="#88ccff" opacity=".4"/>
+        <ellipse cx="380" cy="340" rx="24" ry="18" fill="none" stroke="#66aaee" stroke-width="1.5"/>
+        <line x1="370" y1="358" x2="364" y2="392" stroke="#88ccff" stroke-width="1.5" opacity=".55"/>
+        <line x1="376" y1="358" x2="372" y2="398" stroke="#88ccff" stroke-width="1.5" opacity=".55"/>
+        <line x1="380" y1="358" x2="380" y2="400" stroke="#88ccff" stroke-width="1.5" opacity=".55"/>
+        <line x1="384" y1="358" x2="388" y2="398" stroke="#88ccff" stroke-width="1.5" opacity=".55"/>
+        <line x1="390" y1="358" x2="396" y2="392" stroke="#88ccff" stroke-width="1.5" opacity=".55"/>
+      </g>
+    </svg>
+    <!-- 거품 -->
+    <span class="bubble" style="left:8%; bottom:15%; --bs:7px; --bd:8s; --bde:0s;"></span>
+    <span class="bubble" style="left:18%;bottom:18%;--bs:11px;--bd:11s;--bde:1.5s;"></span>
+    <span class="bubble" style="left:29%;bottom:12%;--bs:6px; --bd:9s; --bde:3.0s;"></span>
+    <span class="bubble" style="left:41%;bottom:20%;--bs:9px; --bd:7s; --bde:0.8s;"></span>
+    <span class="bubble" style="left:52%;bottom:16%;--bs:12px;--bd:12s;--bde:2.2s;"></span>
+    <span class="bubble" style="left:63%;bottom:14%;--bs:7px; --bd:8.5s;--bde:4.0s;"></span>
+    <span class="bubble" style="left:72%;bottom:19%;--bs:10px;--bd:10s;--bde:1.0s;"></span>
+    <span class="bubble" style="left:83%;bottom:13%;--bs:8px; --bd:9.5s;--bde:2.8s;"></span>
+    <span class="bubble" style="left:91%;bottom:17%;--bs:6px; --bd:7.5s;--bde:0.5s;"></span>
+    <span class="bubble" style="left:24%;bottom:25%;--bs:5px; --bd:13s;--bde:3.5s;"></span>
+    <span class="bubble" style="left:56%;bottom:28%;--bs:8px; --bd:10s;--bde:1.8s;"></span>
+    <span class="bubble" style="left:78%;bottom:22%;--bs:5px; --bd:11s;--bde:5.0s;"></span>
+  </div>
+
+  <!-- ── 설원 겨울밤 (Winter Snow Night) ── -->
+  <div class="bg-layer scene-snow">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="snSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#020510"/>
+          <stop offset="18%"  stop-color="#07103a"/>
+          <stop offset="42%"  stop-color="#0c1e64"/>
+          <stop offset="68%"  stop-color="#0e2e88"/>
+          <stop offset="100%" stop-color="#0a2070"/>
+        </linearGradient>
+        <linearGradient id="snMtn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#eaf4ff"/>
+          <stop offset="28%"  stop-color="#c0d8f0"/>
+          <stop offset="100%" stop-color="#1a2840"/>
+        </linearGradient>
+        <linearGradient id="snGnd" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#d8e8ff"/>
+          <stop offset="100%" stop-color="#b8ccee"/>
+        </linearGradient>
+        <radialGradient id="snMoon" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#f0f8ff"/>
+          <stop offset="40%"  stop-color="#ddeeff" stop-opacity=".7"/>
+          <stop offset="100%" stop-color="#c8e0ff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="snBlur14"><feGaussianBlur stdDeviation="14"/></filter>
+        <filter id="snBlur5"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+      <rect width="1440" height="900" fill="url(#snSky)"/>
+      <!-- 별 -->
+      <circle cx="55"   cy="28"  r="1.5" fill="white" opacity=".92"/>
+      <circle cx="140"  cy="52"  r="1"   fill="white" opacity=".78"/>
+      <circle cx="228"  cy="18"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="318"  cy="45"  r="1"   fill="white" opacity=".82"/>
+      <circle cx="405"  cy="22"  r="1.5" fill="white" opacity=".88"/>
+      <circle cx="492"  cy="58"  r="1"   fill="white" opacity=".72"/>
+      <circle cx="562"  cy="32"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="640"  cy="15"  r="1.5" fill="white" opacity=".82"/>
+      <circle cx="710"  cy="48"  r="1"   fill="white" opacity=".76"/>
+      <circle cx="785"  cy="25"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="862"  cy="62"  r="1"   fill="white" opacity=".8"/>
+      <circle cx="940"  cy="22"  r="1.5" fill="white" opacity=".86"/>
+      <circle cx="1015" cy="44"  r="1"   fill="white" opacity=".72"/>
+      <circle cx="1095" cy="18"  r="2"   fill="white" opacity=".9"/>
+      <circle cx="1172" cy="52"  r="1.5" fill="white" opacity=".82"/>
+      <circle cx="1252" cy="30"  r="1"   fill="white" opacity=".76"/>
+      <circle cx="1332" cy="48"  r="2"   fill="white" opacity=".95"/>
+      <circle cx="1400" cy="22"  r="1.5" fill="white" opacity=".86"/>
+      <circle cx="85"   cy="90"  r="1"   fill="white" opacity=".65"/>
+      <circle cx="196"  cy="80"  r="1.5" fill="white" opacity=".70"/>
+      <circle cx="352"  cy="72"  r="1"   fill="white" opacity=".62"/>
+      <circle cx="510"  cy="88"  r="2"   fill="white" opacity=".72"/>
+      <circle cx="672"  cy="76"  r="1.5" fill="white" opacity=".66"/>
+      <circle cx="840"  cy="92"  r="1"   fill="white" opacity=".60"/>
+      <circle cx="1000" cy="80"  r="2"   fill="white" opacity=".70"/>
+      <circle cx="1160" cy="86"  r="1.5" fill="white" opacity=".66"/>
+      <circle cx="1320" cy="74"  r="1"   fill="white" opacity=".62"/>
+      <!-- 달 -->
+      <circle cx="1240" cy="130" r="140" fill="url(#snMoon)" filter="url(#snBlur14)"/>
+      <circle cx="1240" cy="130" r="52"  fill="#edf6ff"/>
+      <circle cx="1224" cy="120" r="7"   fill="rgba(180,210,240,.24)"/>
+      <circle cx="1248" cy="144" r="5"   fill="rgba(180,210,240,.20)"/>
+      <circle cx="1258" cy="120" r="4"   fill="rgba(180,210,240,.18)"/>
+      <!-- 오로라 (차가운 청록/보라) -->
+      <path d="M-100,230 Q380,105 760,230 Q1100,342 1540,210" stroke="rgba(80,220,180,.18)" stroke-width="100" fill="none" filter="url(#snBlur14)"/>
+      <path d="M-100,290 Q420,162 870,268 Q1220,354 1540,262" stroke="rgba(100,140,255,.15)" stroke-width="76" fill="none" filter="url(#snBlur14)"/>
+      <path d="M-100,340 Q500,202 920,310 Q1210,388 1540,310" stroke="rgba(60,200,220,.10)" stroke-width="58" fill="none" filter="url(#snBlur14)"/>
+      <!-- 원거리 설산 -->
+      <path d="M0,900 L0,560 L80,450 L160,510 L260,400 L360,476 L478,358 L580,436 L680,368 L780,446 L880,386 L980,458 L1080,398 L1180,472 L1280,416 L1380,492 L1440,458L1440,900Z" fill="#1a2840"/>
+      <!-- 설산 눈 캡 -->
+      <path d="M260,400 L230,460 L290,460Z" fill="url(#snMtn)" opacity=".85"/>
+      <path d="M478,358 L440,430 L516,430Z" fill="url(#snMtn)" opacity=".88"/>
+      <path d="M680,368 L648,440 L712,440Z" fill="url(#snMtn)" opacity=".85"/>
+      <path d="M880,386 L848,450 L912,450Z" fill="url(#snMtn)" opacity=".88"/>
+      <path d="M1080,398 L1048,464 L1112,464Z" fill="url(#snMtn)" opacity=".85"/>
+      <path d="M1280,416 L1248,480 L1312,480Z" fill="url(#snMtn)" opacity=".88"/>
+      <!-- 중경 언덕 -->
+      <path d="M0,900 L0,628 L120,516 L240,586 L380,504 L500,568 L640,496 L760,560 L880,504 L1000,566 L1120,514 L1240,572 L1360,524 L1440,558L1440,900Z" fill="#0e1c38"/>
+      <!-- 설원 지면 -->
+      <path d="M0,900 L0,796 Q180,768 360,784 Q540,800 720,778 Q900,758 1080,774 Q1260,790 1440,772L1440,900Z" fill="url(#snGnd)"/>
+      <!-- 눈 덮인 소나무 숲 -->
+      <g fill="#060e1e">
+        <polygon points="56,786 34,830 78,830"/><polygon points="56,804 28,852 84,852"/><polygon points="56,824 20,872 92,872"/><rect x="50" y="872" width="12" height="16"/>
+        <!-- 눈 -->
+        <ellipse cx="56"  cy="788" rx="22" ry="5" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="56"  cy="806" rx="28" ry="6" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="138,772 116,820 160,820"/><polygon points="138,792 108,844 168,844"/><polygon points="138,814 104,864 172,864"/><rect x="132" y="864" width="12" height="16"/>
+        <ellipse cx="138" cy="774" rx="22" ry="5" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="138" cy="794" rx="28" ry="6" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="228,758 200,812 256,812"/><polygon points="228,782 194,840 262,840"/><polygon points="228,808 188,866 268,866"/><rect x="222" y="866" width="12" height="18"/>
+        <ellipse cx="228" cy="760" rx="26" ry="6" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="228" cy="784" rx="32" ry="7" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="326,766 302,818 350,818"/><polygon points="326,788 296,844 356,844"/><polygon points="326,812 290,864 362,864"/><rect x="320" y="864" width="12" height="16"/>
+        <ellipse cx="326" cy="768" rx="24" ry="5" fill="#d8eaff" opacity=".9"/>
+
+        <polygon points="422,748 392,808 452,808"/><polygon points="422,776 386,840 458,840"/><polygon points="422,806 380,868 464,868"/><rect x="415" y="868" width="14" height="18"/>
+        <ellipse cx="422" cy="750" rx="28" ry="7" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="422" cy="778" rx="34" ry="8" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="530,760 508,808 552,808"/><polygon points="530,780 502,832 558,832"/><polygon points="530,802 498,856 562,856"/><rect x="524" y="856" width="12" height="16"/>
+        <ellipse cx="530" cy="762" rx="22" ry="5" fill="#d8eaff" opacity=".9"/>
+
+        <polygon points="940,754 916,806 964,806"/><polygon points="940,776 910,832 970,832"/><polygon points="940,800 906,858 974,858"/><rect x="934" y="858" width="12" height="16"/>
+        <ellipse cx="940" cy="756" rx="24" ry="5" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="940" cy="778" rx="30" ry="7" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="1040,766 1016,818 1064,818"/><polygon points="1040,788 1010,844 1070,844"/><polygon points="1040,812 1006,866 1074,866"/><rect x="1034" y="866" width="12" height="16"/>
+        <ellipse cx="1040" cy="768" rx="22" ry="5" fill="#d8eaff" opacity=".9"/>
+
+        <polygon points="1148,748 1118,810 1178,810"/><polygon points="1148,778 1112,844 1184,844"/><polygon points="1148,810 1106,872 1190,872"/><rect x="1141" y="872" width="14" height="18"/>
+        <ellipse cx="1148" cy="750" rx="28" ry="7" fill="#d8eaff" opacity=".9"/>
+        <ellipse cx="1148" cy="780" rx="34" ry="8" fill="#d8eaff" opacity=".8"/>
+
+        <polygon points="1264,758 1240,810 1288,810"/><polygon points="1264,780 1234,836 1294,836"/><polygon points="1264,804 1228,862 1300,862"/><rect x="1258" y="862" width="12" height="16"/>
+        <ellipse cx="1264" cy="760" rx="24" ry="5" fill="#d8eaff" opacity=".9"/>
+
+        <polygon points="1368,766 1344,816 1392,816"/><polygon points="1368,788 1338,842 1398,842"/><polygon points="1368,810 1330,864 1406,864"/><rect x="1362" y="864" width="12" height="16"/>
+        <ellipse cx="1368" cy="768" rx="22" ry="5" fill="#d8eaff" opacity=".9"/>
+      </g>
+      <!-- 눈 위 발자국 (귀여운 디테일) -->
+      <g fill="#b0c8e8" opacity=".6">
+        <ellipse cx="680" cy="840" rx="6"  ry="3" transform="rotate(-20,680,840)"/>
+        <ellipse cx="696" cy="836" rx="6"  ry="3" transform="rotate(15,696,836)"/>
+        <ellipse cx="712" cy="840" rx="6"  ry="3" transform="rotate(-20,712,840)"/>
+        <ellipse cx="728" cy="836" rx="6"  ry="3" transform="rotate(15,728,836)"/>
+        <ellipse cx="744" cy="840" rx="6"  ry="3" transform="rotate(-20,744,840)"/>
+      </g>
+    </svg>
+    <!-- 눈송이 -->
+    <span class="snowflake" style="left:4%; top:-2%;  --ss:12px;--sd:7s; --sde:0s;   --sx:18px;--sr:240deg;">❄</span>
+    <span class="snowflake" style="left:11%;top:-4%;  --ss:9px; --sd:9s; --sde:1.4s; --sx:-14px;--sr:360deg;">❅</span>
+    <span class="snowflake" style="left:19%;top:-1%;  --ss:14px;--sd:8s; --sde:0.7s; --sx:22px;--sr:300deg;">❄</span>
+    <span class="snowflake" style="left:27%;top:-5%;  --ss:8px; --sd:10s;--sde:2.8s; --sx:-20px;--sr:180deg;">❅</span>
+    <span class="snowflake" style="left:36%;top:-2%;  --ss:11px;--sd:7.5s;--sde:1.0s;--sx:16px;--sr:270deg;">❄</span>
+    <span class="snowflake" style="left:44%;top:-4%;  --ss:15px;--sd:9.5s;--sde:3.5s;--sx:-24px;--sr:420deg;">❅</span>
+    <span class="snowflake" style="left:52%;top:-1%;  --ss:10px;--sd:8.5s;--sde:0.4s;--sx:20px;--sr:200deg;">❄</span>
+    <span class="snowflake" style="left:60%;top:-3%;  --ss:7px; --sd:11s;--sde:2.0s; --sx:-12px;--sr:320deg;">❅</span>
+    <span class="snowflake" style="left:68%;top:-2%;  --ss:13px;--sd:7.8s;--sde:4.2s;--sx:18px;--sr:260deg;">❄</span>
+    <span class="snowflake" style="left:76%;top:-5%;  --ss:9px; --sd:9.2s;--sde:1.6s;--sx:-22px;--sr:380deg;">❅</span>
+    <span class="snowflake" style="left:84%;top:-1%;  --ss:12px;--sd:8.0s;--sde:0.9s;--sx:14px;--sr:220deg;">❄</span>
+    <span class="snowflake" style="left:92%;top:-4%;  --ss:10px;--sd:10.5s;--sde:3.0s;--sx:-18px;--sr:340deg;">❅</span>
+    <span class="snowflake" style="left:23%;top:-6%;  --ss:8px; --sd:12s;--sde:5.0s; --sx:10px;--sr:160deg;">❄</span>
+    <span class="snowflake" style="left:55%;top:-3%;  --ss:11px;--sd:8.8s;--sde:2.4s;--sx:-16px;--sr:290deg;">❅</span>
+    <span class="snowflake" style="left:79%;top:-6%;  --ss:7px; --sd:11.5s;--sde:4.8s;--sx:24px;--sr:410deg;">❄</span>
+  </div>
+
+</div>
+<!-- ══ END BACKGROUND SCENE ══ -->
+
+  <!-- TOP UI -->
+  <div id="top-ui">
+    <div class="ui-card">
+      <span class="label">점수</span>
+      <span class="value" id="score-val">0</span>
+    </div>
+    <div class="ui-card">
+      <span class="label">⏱</span>
+      <span id="timer-val" class="value">60</span>
+    </div>
+    <div class="ui-card">
+      <span class="label">콤보</span>
+      <span class="value" id="combo-val">0</span>
+    </div>
+    <div id="hammer-badge">🔨 <span id="hammer-level-txt">Lv.1 뿅망치</span></div>
+    <div class="ui-card" style="gap:4px;">
+      <span class="label">🕳 굴</span>
+      <button class="hole-ctrl-btn" id="game-hole-dec" style="width:22px;height:22px;font-size:0.85rem;">−</button>
+      <span class="value" id="game-hole-val" style="font-size:0.85rem;min-width:28px;text-align:center;">9</span>
+      <button class="hole-ctrl-btn" id="game-hole-inc" style="width:22px;height:22px;font-size:0.85rem;">+</button>
+    </div>
+    <div id="fever-bar-wrap">
+      <span style="font-size:0.78rem;font-weight:800;color:#7b1fa2;">🌈FEVER</span>
+      <div class="fever-bar-bg"><div class="fever-bar-fill" id="fever-fill" style="width:100%"></div></div>
+      <span id="fever-time-txt" style="font-size:0.78rem;font-weight:800;color:#7b1fa2;">7s</span>
+    </div>
+    <button class="bg-toggle" id="bg-toggle-btn">🌅 배경 전환</button>
+    <button id="quit-btn">✕ 나가기</button>
+  </div>
+
+  <!-- GAME FIELD -->
+  <div id="game-field">
+    <!-- 9 holes generated by JS -->
+  </div>
+</div>
+
+<!-- ONLINE SCOREBOARD (in-game) -->
+<div id="online-scoreboard">
+  <div class="obs-title">🌐 실시간 순위</div>
+  <div id="obs-rows"></div>
+</div>
+
+<!-- QUIT CONFIRM OVERLAY -->
+<div id="quit-overlay">
+  <div id="quit-dialog">
+    <div class="quit-title">🚪 게임 나가기</div>
+    <div class="quit-sub">지금 나가면 현재 점수는 저장되지 않아요!</div>
+    <div class="quit-btn-row">
+      <button class="quit-confirm" id="quit-confirm-btn">나가기</button>
+      <button class="quit-cancel"  id="quit-cancel-btn">계속 하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEVER OVERLAY -->
+<div id="fever-overlay"></div>
+
+<!-- END SCREEN -->
+<div id="end-screen" class="screen hidden">
+  <div class="end-title">🎉 게임 종료! 🎉</div>
+  <div id="end-my-score" class="end-score-display"></div>
+  <div id="end-stats" class="end-stats-card"></div>
+  <div class="garland" id="garland"></div>
+  <div class="podium-wrap" id="podium-wrap"></div>
+  <div class="rank-table" id="rank-table"></div>
+  <button class="play-again-btn" id="play-again-btn">다시 하기! 🔨</button>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const STATE = {
+  player: { id:'local_player', name:'플레이어', score:0, combo:0, maxCombo:0, kills:{} },
+  timer: 60,
+  hammerLevel: 1,
+  feverActive: false,
+  feverTimer: 0,
+  bgMode: 'river',
+  gameRunning: false,
+  totalElapsed: 0, // seconds since game start
+};
+
+// Virtual leaderboard
+const VIRTUAL_PLAYERS = [
+  { name:'몽실이', score:0 },
+  { name:'해피해피', score:0 },
+  { name:'뿅망치왕', score:0 },
+  { name:'두더지헌터', score:0 },
+];
+
+// ============================================================
+// HAMMER CURSOR
+// ============================================================
+const hammerCursor = document.getElementById('hammer-cursor');
+const hammerHead = document.getElementById('hammer-head');
+
+document.addEventListener('mousemove', e => {
+  hammerCursor.style.left = e.clientX + 'px';
+  hammerCursor.style.top  = e.clientY + 'px';
+});
+
+function triggerHammerSwing() {
+  hammerCursor.classList.remove('hit');
+  void hammerCursor.offsetWidth;
+  hammerCursor.classList.add('hit');
+  setTimeout(() => hammerCursor.classList.remove('hit'), 300);
+}
+
+// Update hammer visuals by level — 그라데이션 SVG stop 색상 변경
+function updateHammerVisual(level) {
+  const svg  = document.getElementById('hammer-svg');
+  const head = document.getElementById('hammer-head');
+  const grad = svg.querySelector('#headG, [id="headG"]') || svg.querySelector('linearGradient');
+  const txt  = document.getElementById('hammer-level-txt');
+
+  function setHeadGrad(top, mid, bot) {
+    if (grad && grad.children.length >= 3) {
+      grad.children[0].setAttribute('stop-color', top);
+      grad.children[1].setAttribute('stop-color', mid);
+      grad.children[2].setAttribute('stop-color', bot);
+    } else if (head) {
+      head.setAttribute('fill', mid);
+    }
+  }
+
+  if (level === 1) {
+    setHeadGrad('#f48fb1','#e91e63','#ad1457');
+    svg.style.filter    = 'none';
+    svg.style.transform = 'scale(1)';
+    txt.textContent     = 'Lv.1 뿅망치';
+    hammerCursor.style.filter = 'none';
+  } else if (level === 2) {
+    setHeadGrad('#90caf9','#4a7fb5','#1a4f8a');
+    svg.style.filter    = 'drop-shadow(0 0 10px #64b5f6)';
+    svg.style.transform = 'scale(1.2)';
+    txt.textContent     = 'Lv.2 🐱젤리망치';
+    hammerCursor.style.filter = 'drop-shadow(0 0 10px #42a5f5)';
+  } else {
+    setHeadGrad('#fff9c4','#ffd700','#f57f17');
+    svg.style.filter    = 'drop-shadow(0 0 14px rgba(255,210,0,0.95))';
+    svg.style.transform = 'scale(1.4)';
+    txt.textContent     = 'Lv.3 ✨황금망치';
+    hammerCursor.style.filter = 'drop-shadow(0 0 16px #ffd700)';
+  }
+}
+
+// ============================================================
+// MOLE SVG GENERATORS
+// ============================================================
+// SVG 그라데이션 ID는 HTML 문서 전역 범위 → 충돌 방지를 위해 호출마다 고유 ID 부여
+let _gid = 0;
+
+// Base face parts — reused across types
+// baseFace: 그라데이션 몸통+얼굴+볼터치 공통 레이어 (n = 고유 ID 접미사)
+function baseFace(bodyDark, faceDark, bodyLight='', faceLight='', n=0) {
+  const bl = bodyLight || bodyDark;
+  const fl = faceLight || faceDark;
+  return `
+    <defs>
+      <radialGradient id="bG${n}" cx="38%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="${bl}"/>
+        <stop offset="100%" stop-color="${bodyDark}"/>
+      </radialGradient>
+      <radialGradient id="fG${n}" cx="34%" cy="25%" r="68%">
+        <stop offset="0%" stop-color="${fl}"/>
+        <stop offset="100%" stop-color="${faceDark}"/>
+      </radialGradient>
+      <radialGradient id="chkG${n}" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#bG${n})"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#fG${n})"/>
+    <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+  `;
+}
+
+// 일반 눈 — 5레이어 (공막, 외홍채, 홍채, 동공, 캐치라이트×2)
+function normalEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
+    <ellipse cx="54" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
+    <circle cx="37" cy="43" r="5.8" fill="#1e0e02"/>
+    <circle cx="55" cy="43" r="5.8" fill="#1e0e02"/>
+    <circle cx="37" cy="43" r="4.8" fill="#3e2008"/>
+    <circle cx="55" cy="43" r="4.8" fill="#3e2008"/>
+    <circle cx="37.5" cy="43.5" r="2.8" fill="#060200"/>
+    <circle cx="55.5" cy="43.5" r="2.8" fill="#060200"/>
+    <circle cx="40.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
+    <circle cx="58.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
+    <circle cx="35" cy="46" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="53" cy="46" r="1" fill="#fff" opacity="0.5"/>
+  </g>`;
+}
+
+// 눈물 글썽 눈 🥺
+function tearyEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="42" rx="8" ry="9" fill="#eef4ff"/>
+    <ellipse cx="54" cy="42" rx="8" ry="9" fill="#eef4ff"/>
+    <ellipse cx="36" cy="43" rx="8" ry="9" fill="none" stroke="#b3d8ff" stroke-width="1.5" opacity="0.7"/>
+    <ellipse cx="54" cy="43" rx="8" ry="9" fill="none" stroke="#b3d8ff" stroke-width="1.5" opacity="0.7"/>
+    <circle cx="36" cy="45" r="5.5" fill="#1e0e02"/>
+    <circle cx="54" cy="45" r="5.5" fill="#1e0e02"/>
+    <circle cx="36" cy="45" r="4.5" fill="#3e2008"/>
+    <circle cx="54" cy="45" r="4.5" fill="#3e2008"/>
+    <circle cx="36" cy="45.5" r="2.5" fill="#060200"/>
+    <circle cx="54" cy="45.5" r="2.5" fill="#060200"/>
+    <circle cx="33.5" cy="42.5" r="1.8" fill="#fff" opacity="0.92"/>
+    <circle cx="51.5" cy="42.5" r="1.8" fill="#fff" opacity="0.92"/>
+    <ellipse cx="29" cy="56" rx="2.5" ry="4.5" fill="#64b5f6" opacity="0.88"/>
+    <ellipse cx="61" cy="56" rx="2.5" ry="4.5" fill="#64b5f6" opacity="0.88"/>
+    <ellipse cx="28.5" cy="53.5" rx="0.9" ry="2" fill="#fff" opacity="0.55"/>
+    <ellipse cx="60.5" cy="53.5" rx="0.9" ry="2" fill="#fff" opacity="0.55"/>
+  </g>`;
+}
+
+// 놀란 눈 😲
+function surprisedEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="42" rx="9" ry="10" fill="#f8f3ec"/>
+    <ellipse cx="54" cy="42" rx="9" ry="10" fill="#f8f3ec"/>
+    <circle cx="36" cy="43" r="7" fill="#1e0e02"/>
+    <circle cx="54" cy="43" r="7" fill="#1e0e02"/>
+    <circle cx="36" cy="43" r="5.8" fill="#3e2008"/>
+    <circle cx="54" cy="43" r="5.8" fill="#3e2008"/>
+    <circle cx="36" cy="43" r="4" fill="#060200"/>
+    <circle cx="54" cy="43" r="4" fill="#060200"/>
+    <circle cx="33.5" cy="40" r="2.2" fill="#fff" opacity="0.95"/>
+    <circle cx="51.5" cy="40" r="2.2" fill="#fff" opacity="0.95"/>
+    <circle cx="38.5" cy="46.5" r="0.9" fill="#fff" opacity="0.5"/>
+    <circle cx="56.5" cy="46.5" r="0.9" fill="#fff" opacity="0.5"/>
+  </g>`;
+}
+
+// 빙빙 눈 🌀
+function spinningEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="42" rx="9" ry="9" fill="#f8f3ec"/>
+    <ellipse cx="54" cy="42" rx="9" ry="9" fill="#f8f3ec"/>
+    <text x="36" y="46" text-anchor="middle" font-size="12">🌀</text>
+    <text x="54" y="46" text-anchor="middle" font-size="12">🌀</text>
+  </g>`;
+}
+
+// X 눈 >_<
+function xEyes() {
+  return `<g class="eyes-grp">
+    <line x1="29" y1="36" x2="43" y2="48" stroke="#2c1a0e" stroke-width="4" stroke-linecap="round"/>
+    <line x1="43" y1="36" x2="29" y2="48" stroke="#2c1a0e" stroke-width="4" stroke-linecap="round"/>
+    <line x1="47" y1="36" x2="61" y2="48" stroke="#2c1a0e" stroke-width="4" stroke-linecap="round"/>
+    <line x1="61" y1="36" x2="47" y2="48" stroke="#2c1a0e" stroke-width="4" stroke-linecap="round"/>
+  </g>`;
+}
+
+// 하트 눈 😍
+function heartEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="42" rx="9" ry="9" fill="#fff0f5"/>
+    <ellipse cx="54" cy="42" rx="9" ry="9" fill="#fff0f5"/>
+    <text x="36" y="47" text-anchor="middle" font-size="14" fill="#e91e63">❤</text>
+    <text x="54" y="47" text-anchor="middle" font-size="14" fill="#e91e63">❤</text>
+    <circle cx="43" cy="35" r="1.8" fill="#ff6090" opacity="0.65"/>
+    <circle cx="61" cy="35" r="1.8" fill="#ff6090" opacity="0.65"/>
+  </g>`;
+}
+
+// 슬픈 눈물 눈 😭
+function sadEyes() {
+  return `<g class="eyes-grp">
+    <ellipse cx="36" cy="43" rx="8.5" ry="9" fill="#eef4ff"/>
+    <ellipse cx="54" cy="43" rx="8.5" ry="9" fill="#eef4ff"/>
+    <circle cx="36" cy="45" r="5.8" fill="#1e0e02"/>
+    <circle cx="54" cy="45" r="5.8" fill="#1e0e02"/>
+    <circle cx="36" cy="45" r="4.8" fill="#3e2008"/>
+    <circle cx="54" cy="45" r="4.8" fill="#3e2008"/>
+    <circle cx="36" cy="45.5" r="2.8" fill="#060200"/>
+    <circle cx="54" cy="45.5" r="2.8" fill="#060200"/>
+    <circle cx="33.5" cy="42" r="1.8" fill="#fff" opacity="0.9"/>
+    <circle cx="51.5" cy="42" r="1.8" fill="#fff" opacity="0.9"/>
+    <path d="M29 35 Q36 30 42 35" stroke="#7a3a18" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M48 35 Q54 30 61 35" stroke="#7a3a18" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="28" cy="56" rx="3" ry="6.5" fill="#64b5f6" opacity="0.9"/>
+    <ellipse cx="62" cy="56" rx="3" ry="6.5" fill="#64b5f6" opacity="0.9"/>
+    <ellipse cx="27.5" cy="53" rx="1.1" ry="2.5" fill="#fff" opacity="0.55"/>
+    <ellipse cx="61.5" cy="53" rx="1.1" ry="2.5" fill="#fff" opacity="0.55"/>
+  </g>`;
+}
+
+// 코+입 헬퍼 (mouth-grp 로 래핑 → CSS mouthBob 애니 적용)
+function noseSmile() {
+  return `
+    <ellipse cx="45" cy="55" rx="4.5" ry="3.2" fill="#b06858"/>
+    <circle cx="43" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <circle cx="47" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <g class="mouth-grp">
+      <path d="M37 61 Q45 68 53 61" stroke="#9a5848" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="45" cy="63" rx="5.5" ry="4" fill="#fff"/>
+      <line x1="45" y1="61" x2="45" y2="66" stroke="#e0d8d4" stroke-width="1.2" opacity="0.6"/>
+    </g>
+  `;
+}
+function nosePout() {
+  return `
+    <ellipse cx="45" cy="55" rx="4.5" ry="3.2" fill="#b06858"/>
+    <circle cx="43" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <circle cx="47" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <g class="mouth-grp">
+      <path d="M39 64 Q45 59 51 64" stroke="#9a5848" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </g>
+  `;
+}
+function noseCry() {
+  return `
+    <ellipse cx="45" cy="55" rx="4.5" ry="3.2" fill="#b06858"/>
+    <circle cx="43" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <circle cx="47" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
+    <g class="mouth-grp">
+      <path d="M37 65 Q45 71 53 65" stroke="#9a5848" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    </g>
+  `;
+}
+
+// --- FLYING SQUIRREL SVG ---
+function svgFlyingSquirrel(hit=false) {
+  const eyes = hit ? xEyes() : normalEyes(true);
+  return `<svg width="72" height="60" viewBox="0 0 90 75" xmlns="http://www.w3.org/2000/svg">
+    <!-- Gliding membrane -->
+    <path d="M8,42 Q4,18 12,8 Q28,28 45,34 Q62,28 78,8 Q86,18 82,42 Q62,48 45,50 Q28,48 8,42 Z"
+          fill="#b8860b" opacity="0.75"/>
+    <!-- Body -->
+    <ellipse cx="45" cy="52" rx="26" ry="18" fill="#8b6914"/>
+    <!-- Head -->
+    <ellipse cx="45" cy="34" rx="22" ry="20" fill="#a07828"/>
+    <!-- Ears -->
+    <polygon points="28,20 22,8  34,18" fill="#8b6914"/>
+    <polygon points="62,20 68,8  56,18" fill="#8b6914"/>
+    <polygon points="28,20 24,11 32,18" fill="#ffb6c1" opacity=".7"/>
+    <polygon points="62,20 66,11 58,18" fill="#ffb6c1" opacity=".7"/>
+    <!-- Cheeks -->
+    <ellipse cx="30" cy="40" rx="6" ry="4" fill="#ffb6c1" opacity=".75"/>
+    <ellipse cx="60" cy="40" rx="6" ry="4" fill="#ffb6c1" opacity=".75"/>
+    ${eyes}
+    <!-- Nose + mouth -->
+    <ellipse cx="45" cy="44" rx="3" ry="2.5" fill="#c2847a"/>
+    ${hit ? '<path d="M40 48 Q45 44 50 48" stroke="#c2847a" stroke-width="1.8" fill="none"/>' : '<path d="M40 48 Q45 52 50 48" stroke="#c2847a" stroke-width="1.8" fill="none"/>'}
+    <!-- Bushy tail -->
+    <path d="M68,60 Q92,40 88,18 Q82,36 76,50 Q72,58 68,60 Z" fill="#d4a017"/>
+    <path d="M68,60 Q95,36 90,12" stroke="#f0c040" stroke-width="4" fill="none" opacity=".5" stroke-linecap="round"/>
+    <!-- Acorn -->
+    ${hit ? '' : '<text x="45" y="72" text-anchor="middle" font-size="10">🌰</text>'}
+  </svg>`;
+}
+
+// --- MOLE TYPE SVGs ---
+
+// 노란 두더지 (기본)
+function svgYellow(hit=false) {
+  const n = ++_gid;
+  const body = baseFace('#8c6f65','#c89070','#c4a898','#f0c8a5', n);
+  const eyes = hit ? tearyEyes() : normalEyes();
+  const mouth = hit ? nosePout() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    ${body}${eyes}${mouth}
+  </svg>`;
+}
+
+// 초록 두더지 (2타)
+function svgGreen(hit=false, finalHit=false) {
+  const n = ++_gid;
+  const eyes = finalHit ? spinningEyes() : hit ? surprisedEyes() : normalEyes();
+  const mouth = hit ? nosePout() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bG${n}" cx="38%" cy="28%" r="65%">
+        <stop offset="0%" stop-color="#7ab87a"/><stop offset="100%" stop-color="#3d6e3e"/>
+      </radialGradient>
+      <radialGradient id="fG${n}" cx="34%" cy="24%" r="68%">
+        <stop offset="0%" stop-color="#aadcaa"/><stop offset="100%" stop-color="#6aaa6a"/>
+      </radialGradient>
+      <radialGradient id="chkG${n}" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="58" rx="34" ry="25" fill="url(#bG${n})"/>
+    <ellipse cx="45" cy="45" rx="28" ry="26" fill="url(#fG${n})"/>
+    <ellipse cx="32" cy="53" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    <ellipse cx="58" cy="53" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    ${eyes}${mouth}
+    <ellipse cx="45" cy="57" rx="4.5" ry="3.2" fill="#3a6a3a"/>
+  </svg>`;
+}
+
+// 빨간 두더지 (빠름)
+function svgRed(hit=false) {
+  const n = ++_gid;
+  const body = baseFace('#8c1010','#e07070','#d44040','#ffaaaa', n);
+  const eyes = hit ? xEyes() : normalEyes();
+  const mouth = hit ? nosePout() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    ${body}${eyes}${mouth}
+    <!-- 속도선 -->
+    <line x1="2" y1="32" x2="16" y2="35" stroke="#ff5252" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+    <line x1="2" y1="43" x2="14" y2="43" stroke="#ff5252" stroke-width="2"   stroke-linecap="round" opacity="0.55"/>
+    <line x1="2" y1="54" x2="16" y2="51" stroke="#ff5252" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+    <line x1="2" y1="24" x2="10" y2="27" stroke="#ff8a80" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+    <line x1="2" y1="62" x2="10" y2="59" stroke="#ff8a80" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+  </svg>`;
+}
+
+// 레인보우 두더지 (피버)
+function svgRainbow(hit=false) {
+  const n = ++_gid;
+  const eyes = hit ? heartEyes() : normalEyes();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="rbB${n}" x1="0%" y1="0%" x2="110%" y2="110%">
+        <stop offset="0%"   stop-color="#ff4081"/>
+        <stop offset="33%"  stop-color="#ffcc02"/>
+        <stop offset="66%"  stop-color="#00e5ff"/>
+        <stop offset="100%" stop-color="#b388ff"/>
+      </linearGradient>
+      <radialGradient id="fG${n}" cx="34%" cy="25%" r="68%">
+        <stop offset="0%" stop-color="#ffe0f0"/><stop offset="100%" stop-color="#f8bbd0"/>
+      </radialGradient>
+      <radialGradient id="chkG${n}" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#rbB${n})"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#fG${n})"/>
+    <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    ${eyes}${noseSmile()}
+    <!-- 왕관 -->
+    <path d="M23 26 L29 10 L36 20 L45 5 L54 20 L61 10 L67 26 Z" fill="#ffd700"/>
+    <path d="M23 26 L29 10 L36 20 L45 5 L54 20 L61 10 L67 26 Z" fill="none" stroke="#ff8f00" stroke-width="1.5"/>
+    <circle cx="45" cy="7"  r="3" fill="#ff5252"/>
+    <circle cx="29" cy="12" r="2.5" fill="#42a5f5"/>
+    <circle cx="61" cy="12" r="2.5" fill="#66bb6a"/>
+  </svg>`;
+}
+
+// 점프 두더지 (콤보리셋)
+function svgJump(hit=false) {
+  const n = ++_gid;
+  const body = baseFace('#8c6f65','#c89070','#c4a898','#f0c8a5', n);
+  const eyes = hit ? surprisedEyes() : normalEyes();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    ${body}${eyes}${noseSmile()}
+    <!-- 날개 -->
+    <ellipse cx="12" cy="50" rx="13" ry="7.5" fill="#ffe0b2" transform="rotate(-22,12,50)" opacity="0.9"/>
+    <ellipse cx="12" cy="50" rx="9"  ry="5"   fill="#fff8f0" transform="rotate(-22,12,50)" opacity="0.6"/>
+    <ellipse cx="78" cy="50" rx="13" ry="7.5" fill="#ffe0b2" transform="rotate(22,78,50)"  opacity="0.9"/>
+    <ellipse cx="78" cy="50" rx="9"  ry="5"   fill="#fff8f0" transform="rotate(22,78,50)"  opacity="0.6"/>
+  </svg>`;
+}
+
+// 행운의 두더지 (10점)
+function svgLucky(hit=false) {
+  const n = ++_gid;
+  const eyes = hit ? heartEyes() : normalEyes();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bG${n}" cx="38%" cy="28%" r="65%">
+        <stop offset="0%" stop-color="#2060c0"/><stop offset="100%" stop-color="#0d3a80"/>
+      </radialGradient>
+      <radialGradient id="fG${n}" cx="34%" cy="24%" r="68%">
+        <stop offset="0%" stop-color="#90cdf8"/><stop offset="100%" stop-color="#64aef6"/>
+      </radialGradient>
+      <radialGradient id="chkG${n}" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="coinG${n}" cx="38%" cy="32%" r="62%">
+        <stop offset="0%" stop-color="#fff176"/><stop offset="100%" stop-color="#f9a825"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#bG${n})"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#fG${n})"/>
+    <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    ${eyes}${noseSmile()}
+    <!-- 금화 -->
+    <circle cx="45" cy="15" r="13" fill="url(#coinG${n})"/>
+    <circle cx="45" cy="15" r="13" fill="none" stroke="#f57f17" stroke-width="1.5"/>
+    <text x="45" y="20" text-anchor="middle" font-size="14" fill="#e65100" font-weight="900">★</text>
+  </svg>`;
+}
+
+// 쟁반 오버레이 (금속 광택) — n: 고유 ID
+function trayOverlay(n=0) {
+  return `
+    <defs>
+      <linearGradient id="trayG${n}" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#eceff1"/>
+        <stop offset="40%"  stop-color="#cfd8dc"/>
+        <stop offset="100%" stop-color="#90a4ae"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="45" cy="26" rx="28" ry="10" fill="url(#trayG${n})" stroke="#78909c" stroke-width="1"/>
+    <ellipse cx="45" cy="19" rx="22" ry="6.5" fill="#dde4e8" stroke="#90a4ae" stroke-width="0.8"/>
+    <ellipse cx="45" cy="15" rx="19" ry="4.5" fill="#eceff1"/>
+    <ellipse cx="38" cy="13" rx="8" ry="2" fill="#fff" opacity="0.55"/>
+  `;
+}
+
+// 쟁반 노란 두더지 (-1점)
+function svgTrayYellow(hit=false) {
+  const n = ++_gid;
+  const body = baseFace('#8c6f65','#c89070','#c4a898','#f0c8a5', n);
+  const eyes = hit ? sadEyes() : normalEyes();
+  const mouth = hit ? noseCry() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    ${body}${eyes}${mouth}${trayOverlay(n)}
+  </svg>`;
+}
+
+// 쟁반 초록 두더지 (-2점)
+function svgTrayGreen(hit=false) {
+  const n = ++_gid;
+  const eyes = hit ? sadEyes() : normalEyes();
+  const mouth = hit ? noseCry() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bG${n}" cx="38%" cy="28%" r="65%">
+        <stop offset="0%" stop-color="#7ab87a"/><stop offset="100%" stop-color="#3d6e3e"/>
+      </radialGradient>
+      <radialGradient id="fG${n}" cx="34%" cy="24%" r="68%">
+        <stop offset="0%" stop-color="#aadcaa"/><stop offset="100%" stop-color="#6aaa6a"/>
+      </radialGradient>
+      <radialGradient id="chkG${n}" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="58" rx="34" ry="25" fill="url(#bG${n})"/>
+    <ellipse cx="45" cy="45" rx="28" ry="26" fill="url(#fG${n})"/>
+    <ellipse cx="32" cy="53" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    <ellipse cx="58" cy="53" rx="8.5" ry="6" fill="url(#chkG${n})"/>
+    ${eyes}${mouth}
+    <ellipse cx="45" cy="57" rx="4.5" ry="3.2" fill="#3a6a3a"/>
+    ${trayOverlay(n)}
+  </svg>`;
+}
+
+// 쟁반 빨간 두더지 (-3점)
+function svgTrayRed(hit=false) {
+  const n = ++_gid;
+  const body = baseFace('#8c1010','#e07070','#d44040','#ffaaaa', n);
+  const eyes = hit ? sadEyes() : normalEyes();
+  const mouth = hit ? noseCry() : noseSmile();
+  return `<svg width="72" height="72" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    ${body}${eyes}${mouth}${trayOverlay(n)}
+  </svg>`;
+}
+
+// ============================================================
+// HOLES SETUP — 동적 개수
+// ============================================================
+// [개수, 열 수] 프리셋
+const HOLE_PRESETS = [
+  { count:4,  cols:2, label:'4개 (2×2)' },
+  { count:6,  cols:3, label:'6개 (2×3)' },
+  { count:9,  cols:3, label:'9개 (3×3)' },
+  { count:12, cols:4, label:'12개 (3×4)' },
+  { count:16, cols:4, label:'16개 (4×4)' },
+  { count:20, cols:5, label:'20개 (4×5)' },
+  { count:25, cols:5, label:'25개 (5×5)' },
+];
+let holePresetIdx = 2; // 기본 9개
+
+const holes = [];
+
+function getHolePreset() { return HOLE_PRESETS[holePresetIdx]; }
+
+function changeHolePreset(dir) {
+  const next = holePresetIdx + dir;
+  if (next < 0 || next >= HOLE_PRESETS.length) return;
+  holePresetIdx = next;
+  updateHoleCountUI();
+  if (STATE.gameRunning) {
+    rebuildHolesDuringGame();
+  }
+}
+
+function updateHoleCountUI() {
+  const p = getHolePreset();
+  const loginVal = document.getElementById('hole-ctrl-val');
+  const gameVal  = document.getElementById('game-hole-val');
+  if (loginVal) loginVal.textContent = p.label;
+  if (gameVal)  gameVal.textContent  = p.count;
+
+  document.getElementById('hole-dec-btn').disabled    = (holePresetIdx === 0);
+  document.getElementById('hole-inc-btn').disabled    = (holePresetIdx === HOLE_PRESETS.length - 1);
+  const gd = document.getElementById('game-hole-dec');
+  const gi = document.getElementById('game-hole-inc');
+  if (gd) gd.disabled = (holePresetIdx === 0);
+  if (gi) gi.disabled = (holePresetIdx === HOLE_PRESETS.length - 1);
+}
+
+function adjustGameFieldScale() {
+  const { count, cols } = getHolePreset();
+  const rows = Math.ceil(count / cols);
+  const fieldW = cols * 112 + (cols - 1) * 26;
+  const fieldH = rows * 80  + (rows - 1) * 28;
+  const maxW = window.innerWidth  - 24;
+  const maxH = window.innerHeight - 90;
+  const scale = Math.min(1, maxW / fieldW, maxH / fieldH);
+  const gf = document.getElementById('game-field');
+  gf.style.transform = scale < 0.98 ? `scale(${scale.toFixed(3)})` : '';
+  gf.style.transformOrigin = 'top center';
+}
+
+function buildHoles() {
+  const field = document.getElementById('game-field');
+  const { count, cols } = getHolePreset();
+  const rows = Math.ceil(count / cols);
+
+  field.style.gridTemplateColumns = `repeat(${cols}, 112px)`;
+  field.style.gridTemplateRows    = `repeat(${rows}, 80px)`;
+
+  field.innerHTML = '';
+  holes.length = 0;
+  for (let i = 0; i < count; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.dataset.index = i;
+    hole.innerHTML = `<div class="hole-rim"></div>`;
+    field.appendChild(hole);
+    holes[i] = { el: hole, mole: null, occupied: false };
+  }
+  adjustGameFieldScale();
+}
+
+window.addEventListener('resize', () => {
+  if (STATE.gameRunning) adjustGameFieldScale();
+});
+
+// 게임 중 구멍 재구성 (점수·타이머 유지)
+function rebuildHolesDuringGame() {
+  // 활성 두더지 제거
+  activeMoles.forEach(m => {
+    clearTimeout(m.timeout);
+    clearTimeout(m.jumpTimer);
+    if (m.div.parentNode) m.div.parentNode.removeChild(m.div);
+  });
+  activeMoles.length = 0;
+  clearTimeout(spawnTimer);
+  buildHoles();
+  startSpawnLoop();
+  updateHoleCountUI();
+}
+
+// ============================================================
+// MOLE DEFINITIONS
+// ============================================================
+// type: 'yellow'|'green'|'red'|'rainbow'|'jump'|'lucky'|'tray_yellow'|'tray_green'|'tray_red'
+const MOLE_TYPES = {
+  yellow:      { score:1,  hp:1, dur:2200, color:'#ffcc02', name:'노란 두더지' },
+  green:       { score:2,  hp:2, dur:3000, color:'#66bb6a', name:'초록 두더지' },
+  red:         { score:3,  hp:1, dur:500,  color:'#ef5350', name:'빨간 두더지' },
+  rainbow:     { score:0,  hp:1, dur:2000, color:'#ab47bc', name:'레인보우 두더지' },
+  jump:        { score:4,  hp:1, dur:1800, color:'#ffa726', name:'점프 두더지' },
+  lucky:       { score:10, hp:1, dur:2500, color:'#ffd700', name:'행운의 두더지' },
+  tray_yellow: { score:0,  hp:1, dur:2200, color:'#90a4ae', name:'쟁반 노란 두더지', penalty:1 },
+  tray_green:  { score:0,  hp:1, dur:3000, color:'#90a4ae', name:'쟁반 초록 두더지', penalty:2 },
+  tray_red:    { score:0,  hp:1, dur:900,  color:'#90a4ae', name:'쟁반 빨간 두더지', penalty:3 },
+};
+
+// 날다람쥐: 화면을 가로질러 날아가며, 클릭하면 -1점
+const MOLE_DISPLAY_NAMES = {
+  yellow:'🟡 노란',green:'🟢 초록',red:'🔴 빨간',
+  rainbow:'🌈 레인보우',jump:'🟠 점프',lucky:'⭐ 행운',
+};
+
+// Active moles array
+const activeMoles = [];
+let spawnTimer = null;
+let gameLoopTimer = null;
+let feverInterval = null;
+let squirrelTimer = null;
+
+// ============================================================
+// FLYING SQUIRREL
+// ============================================================
+function spawnFlyingSquirrel() {
+  if (!STATE.gameRunning) return;
+  const fromRight = Math.random() > 0.5;
+  const dur = 3200 + Math.random() * 1800;
+  const topPct = 12 + Math.random() * 52;
+
+  const el = document.createElement('div');
+  el.className = 'flying-squirrel';
+  el.style.cssText = `--sf-top:${topPct}%;--sf-dur:${dur}ms;` +
+    (fromRight
+      ? `--sf-from:calc(100vw + 80px);--sf-to:-80px;--sf-sx:-1;`
+      : `--sf-from:-80px;--sf-to:calc(100vw + 80px);--sf-sx:1;`);
+  el.innerHTML = svgFlyingSquirrel(false);
+  document.body.appendChild(el);
+
+  el.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    handleFlyingSquirrelHit(el, e);
+  });
+
+  const removeId = setTimeout(() => el.remove(), dur + 100);
+  el._removeId = removeId;
+
+  // Next squirrel: 15~30 s later
+  squirrelTimer = setTimeout(spawnFlyingSquirrel, 15000 + Math.random() * 15000);
+}
+
+function handleFlyingSquirrelHit(el, e) {
+  if (!STATE.gameRunning) return;
+  clearTimeout(el._removeId);
+  triggerHammerSwing();
+  AudioEngine.sfxTray();
+  el.innerHTML = svgFlyingSquirrel(true);
+  el.classList.add('hit-sq');
+  STATE.player.score = Math.max(0, STATE.player.score - 1);
+  STATE.player.combo = 0;
+  downgradeHammer();
+  showPopup(e.clientX, e.clientY, '날다람쥐! -1점 🐿', 'pop-squirrel');
+  updateUI();
+  setTimeout(() => el.remove(), 320);
+}
+
+// ============================================================
+// SPAWN MOLE
+// ============================================================
+function getRandomEmptyHole() {
+  const empty = holes.filter(h => !h.occupied);
+  if (!empty.length) return null;
+  return empty[Math.floor(Math.random() * empty.length)];
+}
+
+function pickMoleType() {
+  const elapsed = STATE.totalElapsed;
+  const r = Math.random();
+  if (elapsed < 10) {
+    // Only yellow and green early
+    return r < 0.6 ? 'yellow' : 'green';
+  }
+  if (r < 0.27) return 'yellow';
+  if (r < 0.44) return 'green';
+  if (r < 0.57) return 'red';
+  if (r < 0.63) return 'rainbow';
+  if (r < 0.70) return 'jump';
+  if (r < 0.95) {
+    const t = Math.random();
+    return t < 0.33 ? 'tray_yellow' : t < 0.66 ? 'tray_green' : 'tray_red';
+  }
+  if (elapsed >= 10 && r > 0.95) return 'lucky';
+  return 'yellow';
+}
+
+function spawnMole() {
+  if (!STATE.gameRunning) return;
+  const hole = getRandomEmptyHole();
+  if (!hole) return;
+
+  const type = pickMoleType();
+  const def  = MOLE_TYPES[type];
+
+  hole.occupied = true;
+
+  const moleDiv = document.createElement('div');
+  moleDiv.className = 'mole';
+
+  const moleData = {
+    hole, type, def,
+    hp: def.hp,
+    finalHit: false,
+    div: moleDiv,
+    timeout: null,
+  };
+
+  moleDiv.innerHTML = getMoleSVG(type, false, false);
+  hole.el.appendChild(moleDiv);
+
+  // Show
+  requestAnimationFrame(() => {
+    moleDiv.classList.add('visible');
+  });
+
+  // Attach click listener
+  // NOTE: Using pointerdown for easy mobile conversion
+  moleDiv.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    handleMoleHit(moleData, e);
+  });
+
+  // Jump animation for jump type
+  if (type === 'jump') {
+    scheduleJump(moleData);
+  }
+
+  // Auto-hide after duration
+  moleData.timeout = setTimeout(() => {
+    hideMole(moleData, false);
+  }, def.dur);
+
+  activeMoles.push(moleData);
+  hole.mole = moleData;
+}
+
+function getMoleSVG(type, hit, finalHit) {
+  switch(type) {
+    case 'yellow':  return svgYellow(hit);
+    case 'green':   return svgGreen(hit, finalHit);
+    case 'red':     return svgRed(hit);
+    case 'rainbow': return svgRainbow(hit);
+    case 'jump':        return svgJump(hit);
+    case 'lucky':       return svgLucky(hit);
+    case 'tray_yellow': return svgTrayYellow(hit);
+    case 'tray_green':  return svgTrayGreen(hit);
+    case 'tray_red':    return svgTrayRed(hit);
+    default:            return svgYellow(hit);
+  }
+}
+
+function hideMole(moleData, wasHit) {
+  if (!moleData.div.parentNode) return;
+  clearTimeout(moleData.timeout);
+  moleData.div.classList.remove('visible');
+  moleData.div.classList.add('hit-anim');
+  moleData.hole.mole = null;
+  const idx = activeMoles.indexOf(moleData);
+  if (idx !== -1) activeMoles.splice(idx, 1);
+  // 굴은 애니메이션이 완전히 끝난 뒤에 해제 → 동시 2마리 진입 방지
+  setTimeout(() => {
+    if (moleData.div.parentNode) moleData.div.parentNode.removeChild(moleData.div);
+    moleData.hole.occupied = false;
+  }, 350);
+}
+
+// ============================================================
+// GREEN MOLE SPECIAL HIT ZONE CHECK
+// ============================================================
+function isValidGreenHit(e, moleDiv) {
+  // Must click top half of the mole element
+  const rect = moleDiv.getBoundingClientRect();
+  const clickY = e.clientY - rect.top;
+  return clickY < rect.height * 0.5;
+}
+
+// ============================================================
+// HIT HANDLER
+// ============================================================
+function handleMoleHit(moleData, e) {
+  if (!STATE.gameRunning) return;
+  triggerHammerSwing();
+
+  const { type, def, div } = moleData;
+
+  // TRAY mole — penalty
+  if (type.startsWith('tray_')) {
+    handleTrayHit(moleData, e);
+    return;
+  }
+
+  // Green mole zone check
+  if (type === 'green') {
+    const valid = isValidGreenHit(e, div);
+    if (!valid) {
+      // Glancing hit — show surprised but don't damage
+      div.innerHTML = getMoleSVG('green', true, false);
+      showPopup(e.clientX, e.clientY, 'Miss! 😅', 'pop-miss');
+      setTimeout(() => {
+        if (div.parentNode) div.innerHTML = getMoleSVG('green', false, false);
+      }, 500);
+      return;
+    }
+  }
+
+  moleData.hp--;
+
+  const isKill = moleData.hp <= 0;
+  moleData.finalHit = isKill && type === 'green';
+
+  // Update SVG to hit face
+  div.innerHTML = getMoleSVG(type, true, moleData.finalHit);
+
+  if (type === 'rainbow') {
+    spawnRainbowParticles(e.clientX, e.clientY);
+  }
+
+  if (isKill) {
+    let pts = def.score;
+    if (STATE.feverActive) pts *= 2;
+    STATE.player.score += pts;
+
+    // 점프 두더지: 콤보 리셋 & 망치 강등
+    if (type === 'jump') {
+      STATE.player.combo = 0;
+      downgradeHammer();
+      showPopup(e.clientX, e.clientY, `점프! +${pts}점 💨 콤보 리셋!`, 'pop-miss');
+      AudioEngine.sfxTray();
+      spawnHitParticles(e.clientX, e.clientY, def.color);
+      hideMole(moleData, true);
+      updateUI();
+      return;
+    }
+
+    STATE.player.combo++;
+    if (STATE.player.combo > STATE.player.maxCombo) STATE.player.maxCombo = STATE.player.combo;
+    STATE.player.kills[type] = (STATE.player.kills[type] || 0) + 1;
+    checkHammerUpgrade();
+
+    const label = pts >= 6 ? `Perfect!💖 +${pts}` : `Good!⭐ +${pts}`;
+    const cls   = pts >= 6 ? 'pop-perfect' : 'pop-good';
+    showPopup(e.clientX, e.clientY, label, cls);
+
+    // 콤보 2 이상부터 콤보 팝업 표시
+    if (STATE.player.combo >= 2) showComboPopup(STATE.player.combo);
+
+    if (type === 'rainbow') {
+      activateFever();
+    }
+    if (type === 'lucky') {
+      showPopup(e.clientX, e.clientY - 30, `🍀 보너스! +${pts}`, 'pop-bonus');
+    }
+
+    AudioEngine.sfxHit(pts);
+    spawnHitParticles(e.clientX, e.clientY, def.color);
+    hideMole(moleData, true);
+  } else {
+    // Green half-hit feedback
+    showPopup(e.clientX, e.clientY, 'Hit! 💥', 'pop-good');
+    setTimeout(() => {
+      if (div.parentNode) div.innerHTML = getMoleSVG(type, false, false);
+    }, 600);
+  }
+
+  updateUI();
+}
+
+function handleTrayHit(moleData, e) {
+  const { div, type, def } = moleData;
+  div.innerHTML = getMoleSVG(type, true, false);
+  div.classList.add('tray-shake');
+
+  // 쟁반 두더지 종류별 고정 감점 (Lv.3 황금망치는 1점 감면)
+  const basePenalty = def.penalty;
+  const reduction = STATE.hammerLevel >= 3 ? Math.max(1, basePenalty - 1) : basePenalty;
+  STATE.player.score = Math.max(0, STATE.player.score - reduction);
+  STATE.player.combo = 0;
+  downgradeHammer();
+  AudioEngine.sfxTray();
+  showPopup(e.clientX, e.clientY, `쟁반! -${reduction}점 😭`, 'pop-miss');
+  updateUI();
+
+  setTimeout(() => div.classList.remove('tray-shake'), 500);
+  setTimeout(() => hideMole(moleData, true), 600);
+}
+
+// ============================================================
+// HAMMER UPGRADE / DOWNGRADE
+// ============================================================
+function checkHammerUpgrade() {
+  const combo = STATE.player.combo;
+  let newLevel = 1;
+  if (combo >= 14) newLevel = 3;
+  else if (combo >= 7) newLevel = 2;
+  if (newLevel !== STATE.hammerLevel) {
+    STATE.hammerLevel = newLevel;
+    updateHammerVisual(newLevel);
+    AudioEngine.sfxLevelUp();
+  }
+}
+
+function downgradeHammer() {
+  STATE.hammerLevel = 1;
+  updateHammerVisual(1);
+}
+
+// ============================================================
+// JUMP MOLE
+// ============================================================
+function scheduleJump(moleData) {
+  const delay = 500 + Math.random() * 600;
+  moleData.jumpTimer = setTimeout(() => {
+    if (!moleData.div.parentNode) return;
+    doJump(moleData);
+  }, delay);
+}
+
+function doJump(moleData) {
+  const srcHole = moleData.hole;
+  const destHole = getRandomEmptyHole();
+  if (!destHole) return;
+
+  // Get positions
+  const srcRect  = srcHole.el.getBoundingClientRect();
+  const destRect = destHole.el.getBoundingClientRect();
+
+  // Create floating copy
+  const clone = document.createElement('div');
+  clone.className = 'mole-jumping';
+  clone.innerHTML = svgJump(false);
+  clone.style.left = (srcRect.left + 25) + 'px';
+  clone.style.top  = (srcRect.top  + 10) + 'px';
+  clone.style.width  = '90px';
+  clone.style.height = '90px';
+  document.body.appendChild(clone);
+
+  // Animate arc
+  const dx = destRect.left - srcRect.left;
+  const dy = destRect.top  - srcRect.top;
+  clone.animate([
+    { transform:'translate(0,0) rotate(0deg)', opacity:1 },
+    { transform:`translate(${dx/2}px,${-100}px) rotate(-15deg)`, offset:0.4, opacity:1 },
+    { transform:`translate(${dx}px,${dy}px) rotate(10deg)`, opacity:1 }
+  ], { duration:700, easing:'cubic-bezier(0.33,1,0.68,1)', fill:'forwards' })
+    .finished.then(() => {
+      document.body.removeChild(clone);
+      // Move mole
+      srcHole.occupied = false;
+      srcHole.mole = null;
+      moleData.hole = destHole;
+      destHole.occupied = true;
+      destHole.mole = moleData;
+      destHole.el.appendChild(moleData.div);
+      moleData.div.classList.add('visible');
+    });
+
+  moleData.div.classList.remove('visible');
+  srcHole.el.removeChild(moleData.div);
+}
+
+// ============================================================
+// FEVER MODE
+// ============================================================
+function activateFever() {
+  AudioEngine.sfxFever();
+  STATE.feverActive = true;
+  STATE.feverTimer = 7;
+  document.getElementById('fever-overlay').classList.add('active');
+  document.getElementById('fever-bar-wrap').classList.add('active');
+  document.getElementById('fever-time-txt').textContent = '7s';
+  document.getElementById('fever-fill').style.width = '100%';
+
+  clearInterval(feverInterval);
+  feverInterval = setInterval(() => {
+    STATE.feverTimer -= 0.1;
+    const pct = (STATE.feverTimer / 7) * 100;
+    document.getElementById('fever-fill').style.width = Math.max(0, pct) + '%';
+    document.getElementById('fever-time-txt').textContent = Math.max(0, STATE.feverTimer).toFixed(1) + 's';
+    if (STATE.feverTimer <= 0) {
+      endFever();
+    }
+  }, 100);
+}
+
+function endFever() {
+  STATE.feverActive = false;
+  clearInterval(feverInterval);
+  document.getElementById('fever-overlay').classList.remove('active');
+  document.getElementById('fever-bar-wrap').classList.remove('active');
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnHitParticles(x, y, color) {
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (i / 8) * Math.PI * 2;
+    const dist  = 40 + Math.random() * 40;
+    p.style.cssText = `
+      left:${x}px;top:${y}px;
+      width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;
+      background:${color};
+      --px:${Math.cos(angle)*dist}px;
+      --py:${Math.sin(angle)*dist}px;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+function spawnRainbowParticles(x, y) {
+  const colors = ['#ff4081','#ffcc02','#66bb6a','#42a5f5','#ab47bc','#ff7043'];
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 50 + Math.random() * 70;
+    p.style.cssText = `
+      left:${x}px;top:${y}px;
+      width:${8+Math.random()*8}px;height:${8+Math.random()*8}px;
+      background:${colors[i%colors.length]};
+      --px:${Math.cos(angle)*dist}px;
+      --py:${Math.sin(angle)*dist}px;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
+// ============================================================
+// POPUP TEXT
+// ============================================================
+function showPopup(x, y, text, cls) {
+  const el = document.createElement('div');
+  el.className = `popup-text ${cls}`;
+  el.textContent = text;
+  el.style.left = (x - 30) + 'px';
+  el.style.top  = (y - 20) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+// 콤보 전용 팝업 — 화면 중앙 상단에 표시
+function showComboPopup(combo) {
+  const el = document.createElement('div');
+  el.className = 'combo-popup';
+
+  let text, color, size, glow;
+  if (combo >= 14) {
+    text  = `✨ ${combo} COMBO!!`;
+    color = '#ffd700';
+    size  = '2.4rem';
+    glow  = 'drop-shadow(0 0 14px rgba(255,215,0,0.9)) drop-shadow(0 0 28px rgba(255,165,0,0.6))';
+  } else if (combo >= 7) {
+    text  = `🐱 ${combo} COMBO!`;
+    color = '#42a5f5';
+    size  = '2rem';
+    glow  = 'drop-shadow(0 0 10px rgba(66,165,245,0.85))';
+  } else if (combo >= 5) {
+    text  = `🔥 ${combo} COMBO!`;
+    color = '#ff7043';
+    size  = '1.75rem';
+    glow  = 'drop-shadow(0 0 8px rgba(255,112,67,0.7))';
+  } else if (combo >= 3) {
+    text  = `⭐ ${combo} COMBO`;
+    color = '#ab47bc';
+    size  = '1.5rem';
+    glow  = 'none';
+  } else {
+    text  = `${combo} COMBO`;
+    color = '#ff7043';
+    size  = '1.3rem';
+    glow  = 'none';
+  }
+
+  el.textContent = text;
+  el.style.cssText += `color:${color};font-size:${size};filter:${glow};top:22%;`;
+  document.body.appendChild(el);
+
+  // UI 콤보 카드도 같이 튐
+  const comboCard = document.getElementById('combo-val');
+  if (comboCard) {
+    comboCard.classList.remove('combo-jump');
+    void comboCard.offsetWidth;
+    comboCard.classList.add('combo-jump');
+    comboCard.style.color = color;
+    setTimeout(() => { comboCard.style.color = '#7b1fa2'; comboCard.classList.remove('combo-jump'); }, 400);
+  }
+
+  setTimeout(() => el.remove(), 950);
+}
+
+// ============================================================
+// UI UPDATE
+// ============================================================
+function updateUI() {
+  document.getElementById('score-val').textContent = STATE.player.score;
+  document.getElementById('combo-val').textContent = STATE.player.combo;
+}
+
+// ============================================================
+// SPAWN LOOP
+// ============================================================
+function getSpawnInterval() {
+  const elapsed = STATE.totalElapsed;
+  if (elapsed < 10) return 1400;
+  if (elapsed < 25) return 1100;
+  if (elapsed < 40) return 900;
+  return 750;
+}
+
+function startSpawnLoop() {
+  function loop() {
+    if (!STATE.gameRunning) return;
+    spawnMole();
+    spawnTimer = setTimeout(loop, getSpawnInterval());
+  }
+  loop();
+}
+
+// ============================================================
+// GAME TIMER
+// ============================================================
+function startGameTimer() {
+  STATE.timer = 60;
+  document.getElementById('timer-val').textContent = 60;
+
+  gameLoopTimer = setInterval(() => {
+    STATE.timer--;
+    STATE.totalElapsed++;
+    document.getElementById('timer-val').textContent = STATE.timer;
+
+    if (STATE.timer <= 10) {
+      document.getElementById('timer-val').style.color = '#f44336';
+    }
+    if (STATE.timer <= 0) {
+      endGame();
+    }
+  }, 1000);
+}
+
+// ============================================================
+// GAME FLOW
+// ============================================================
+function startGame() {
+  STATE.player.score    = 0;
+  STATE.player.combo    = 0;
+  STATE.player.maxCombo = 0;
+  STATE.player.kills    = {};
+  STATE.hammerLevel     = 1;
+  STATE.feverActive     = false;
+  STATE.feverTimer      = 0;
+  STATE.gameRunning     = true;
+  STATE.totalElapsed    = 0;
+
+  // 날다람쥐: 게임 시작 후 10~20초 뒤 첫 등장
+  squirrelTimer = setTimeout(spawnFlyingSquirrel, 10000 + Math.random() * 10000);
+
+  buildHoles();
+  updateHammerVisual(1);
+  updateUI();
+
+  document.getElementById('timer-val').style.color = '#e65100';
+  document.getElementById('game-screen').className = 'screen bg-river';
+
+  AudioEngine.sfxStart();
+  AudioEngine.startBGM();
+  startSpawnLoop();
+  startGameTimer();
+
+  if (ONLINE.enabled) {
+    document.getElementById('online-scoreboard').classList.add('active');
+    startOnlineScoreSync();
+    updateOnlineScoreboard();
+  }
+}
+
+function endGame() {
+  STATE.gameRunning = false;
+  document.getElementById('quit-overlay').classList.remove('show');
+  clearTimeout(spawnTimer);
+  clearTimeout(squirrelTimer);
+  document.querySelectorAll('.flying-squirrel').forEach(el => el.remove());
+  clearInterval(gameLoopTimer);
+  clearInterval(feverInterval);
+  endFever();
+
+  // Clear remaining moles
+  activeMoles.forEach(m => {
+    clearTimeout(m.timeout);
+    if (m.div.parentNode) m.div.parentNode.removeChild(m.div);
+  });
+  activeMoles.length = 0;
+
+  // Online: sync final score then show end
+  if (ONLINE.enabled) {
+    stopOnlineScoreSync();
+    if (ONLINE.socket) ONLINE.socket.emit('game_end', STATE.player.score);
+    document.getElementById('online-scoreboard').classList.remove('active');
+  } else {
+    // Set up virtual scores
+    VIRTUAL_PLAYERS.forEach(p => {
+      p.score = Math.floor(Math.random() * (STATE.player.score * 1.3 + 20));
+    });
+  }
+
+  AudioEngine.stopBGM();
+  AudioEngine.sfxEnd();
+  showEndScreen();
+}
+
+// ============================================================
+// END SCREEN / PODIUM
+// ============================================================
+function showEndScreen() {
+  showScreen('end');
+
+  document.getElementById('end-my-score').textContent =
+    `${STATE.player.name}님의 점수: ${STATE.player.score}점 🎊`;
+
+  // 통계 카드
+  const statsEl = document.getElementById('end-stats');
+  const killRows = Object.entries(MOLE_DISPLAY_NAMES)
+    .filter(([k]) => STATE.player.kills[k])
+    .map(([k, label]) =>
+      `<div class="stat-row"><span>${label} 두더지</span><span class="stat-val">${STATE.player.kills[k]}마리</span></div>`
+    ).join('');
+  statsEl.innerHTML = `
+    <div class="stat-row combo-row">
+      <span>🔥 최고 콤보</span>
+      <span class="stat-val combo-val">${STATE.player.maxCombo}콤보</span>
+    </div>
+    ${killRows || '<div class="stat-row"><span>잡은 두더지 없음</span></div>'}
+  `;
+
+  // Build full leaderboard
+  const myOnlineId = ONLINE.myId;
+  const allPlayers = ONLINE.enabled
+    ? Object.entries(ONLINE.players).map(([id, p]) => ({
+        name: p.name,
+        score: (id === myOnlineId) ? STATE.player.score : (p.score || 0),
+        isMe: id === myOnlineId,
+      })).sort((a, b) => b.score - a.score)
+    : [
+        { name: STATE.player.name, score: STATE.player.score, isMe: true },
+        ...VIRTUAL_PLAYERS.map(p => ({ name: p.name, score: p.score, isMe: false })),
+      ].sort((a, b) => b.score - a.score);
+
+  // Garland
+  const garland = document.getElementById('garland');
+  const gColors = ['#ff4081','#ffcc02','#66bb6a','#42a5f5','#ab47bc','#ff7043'];
+  garland.innerHTML = Array.from({length:20}, (_,i) =>
+    `<div class="garland-tri" style="border-top-color:${gColors[i%gColors.length]};animation-delay:${i*0.08}s"></div>`
+  ).join('');
+
+  // Podium (top 3)
+  const podiumWrap = document.getElementById('podium-wrap');
+  const top3 = allPlayers.slice(0, 3);
+  // Podium order: 2nd, 1st, 3rd
+  const order = [top3[1], top3[0], top3[2]].filter(Boolean);
+  const blockClasses = ['p2-block','p1-block','p3-block'];
+  const blockHeights = [80, 110, 56];
+  const medals = ['🥈','🥇','🥉'];
+
+  podiumWrap.innerHTML = order.map((p, i) => `
+      <div class="podium-slot">
+        <div class="podium-avatar">${getPodiumMoleSVG()}</div>
+        <div class="podium-name${p.isMe ? ' rank-me' : ''}">${p.name}</div>
+        <div class="podium-pts">${p.score}점</div>
+        <div class="podium-block ${blockClasses[i]}" style="height:${blockHeights[i]}px">
+          ${medals[i]}
+        </div>
+      </div>`).join('');
+
+  // Full rank table
+  const table = document.getElementById('rank-table');
+  table.innerHTML = allPlayers.map((p, i) => `
+    <div class="rank-row${p.isMe ? ' rank-me' : ''}">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-name">${p.name}${p.isMe ? ' ✨' : ''}</div>
+      <div class="rank-pts">${p.score}점</div>
+    </div>
+  `).join('');
+}
+
+function getPodiumMoleSVG() {
+  return `<svg width="64" height="64" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="#a1887f"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="#d7a98a"/>
+    <ellipse cx="33" cy="52" rx="7" ry="5" fill="#ffb6c1" opacity="0.75"/>
+    <ellipse cx="57" cy="52" rx="7" ry="5" fill="#ffb6c1" opacity="0.75"/>
+    ${normalEyes()}${noseSmile()}
+    <!-- Trophy -->
+    <text x="45" y="22" text-anchor="middle" font-size="18">🏆</text>
+  </svg>`;
+}
+
+// ============================================================
+// QUIT BUTTON
+// ============================================================
+document.getElementById('quit-btn').addEventListener('pointerdown', () => {
+  if (!STATE.gameRunning) return;
+  document.getElementById('quit-overlay').classList.add('show');
+});
+document.getElementById('quit-cancel-btn').addEventListener('pointerdown', () => {
+  document.getElementById('quit-overlay').classList.remove('show');
+});
+document.getElementById('quit-confirm-btn').addEventListener('pointerdown', () => {
+  document.getElementById('quit-overlay').classList.remove('show');
+  endGame();
+});
+
+// ============================================================
+// BACKGROUND TOGGLE
+// ============================================================
+const BG_MODES  = ['river','desert','sakura','ocean','snow'];
+const BG_LABELS = {river:'🌅 강가',desert:'🏜️ 사막',sakura:'🌸 벚꽃',ocean:'🌊 바다',snow:'❄️ 설원'};
+document.getElementById('bg-toggle-btn').addEventListener('click', () => {
+  const gs  = document.getElementById('game-screen');
+  const idx = BG_MODES.indexOf(STATE.bgMode);
+  STATE.bgMode = BG_MODES[(idx + 1) % BG_MODES.length];
+  gs.className = `screen bg-${STATE.bgMode}`;
+  document.getElementById('bg-toggle-btn').textContent = BG_LABELS[STATE.bgMode];
+});
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(name) {
+  ['login','game','end','lobby'].forEach(n => {
+    document.getElementById(`${n}-screen`).classList.toggle('hidden', n !== name);
+  });
+}
+
+// ============================================================
+// GLOBAL CLICK (miss detection)
+// ============================================================
+document.getElementById('game-field').addEventListener('pointerdown', (e) => {
+  if (!STATE.gameRunning) return;
+  // 빈 구멍(두더지 없는 곳) 클릭 — 헛손질
+  if (e.target.classList.contains('hole') || e.target.classList.contains('hole-rim')) {
+    triggerHammerSwing();
+    if (STATE.player.combo > 0) {
+      STATE.player.combo = 0;
+      downgradeHammer();
+      showPopup(e.clientX, e.clientY, '헛손질! 💨', 'pop-miss');
+      AudioEngine.sfxMiss();
+      updateUI();
+    }
+  }
+});
+
+// ============================================================
+// LOGIN
+// ============================================================
+document.getElementById('start-btn').addEventListener('pointerdown', () => {
+  const name = document.getElementById('nickname-input').value.trim() || '플레이어';
+  STATE.player.name = name;
+  showScreen('game');
+  setTimeout(() => startGame(), 300);
+});
+
+document.getElementById('nickname-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('start-btn').click();
+});
+
+// 두더지 굴의 개수 버튼
+document.getElementById('hole-dec-btn').addEventListener('pointerdown', () => changeHolePreset(-1));
+document.getElementById('hole-inc-btn').addEventListener('pointerdown', () => changeHolePreset(+1));
+document.getElementById('game-hole-dec').addEventListener('pointerdown', () => changeHolePreset(-1));
+document.getElementById('game-hole-inc').addEventListener('pointerdown', () => changeHolePreset(+1));
+
+// 키보드 − / + (= 포함)
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return; // 닉네임 입력 중 무시
+  if (e.key === '-' || e.key === '_') changeHolePreset(-1);
+  if (e.key === '=' || e.key === '+') changeHolePreset(+1);
+});
+
+// 초기 UI 동기화
+updateHoleCountUI();
+
+document.getElementById('play-again-btn').addEventListener('pointerdown', () => {
+  if (ONLINE.enabled) {
+    cancelLobby(); // cancelLobby already calls showScreen('login')
+  } else {
+    showScreen('login');
+  }
+  // Reset timer color
+  document.getElementById('timer-val').style.color = '#e65100';
+});
+
+// ============================================================
+// URL-BASED ROOM AUTO-FILL
+// ============================================================
+function cleanRoomURL() {
+  if (window.history && window.location.search) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+(function detectURLRoom() {
+  const params   = new URLSearchParams(window.location.search);
+  const urlRoom  = params.get('room');
+  if (!urlRoom) return;
+  const roomCode = urlRoom.toUpperCase().slice(0, 6);
+  cleanRoomURL();
+  // 방 번호 입력란에 자동 채우기 — 별도 UI 불필요
+  const input = document.getElementById('room-code-input');
+  if (input) {
+    input.value = roomCode;
+    input.dispatchEvent(new Event('input'));
+    // 닉네임 입력란으로 포커스
+    setTimeout(() => document.getElementById('nickname-input').focus(), 100);
+  }
+})();
+
+// ============================================================
+// INITIAL SCREEN
+// ============================================================
+showScreen('login');
+// ============================================================
+// AUDIO ENGINE  (Web Audio API — no external files)
+// ============================================================
+const AudioEngine = (() => {
+  let ctx = null;
+  let masterGain = null;
+  let bgmPlaying = false;
+  let bgmLoopId  = null;
+  const state = { bgm: true, sfx: true, volume: 0.7 };
+
+  function getCtx() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = state.volume;
+      masterGain.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function getDest() {
+    getCtx();
+    return masterGain;
+  }
+
+  // Synthesize a single tone
+  function tone(freq, dur, start, type='triangle', vol=0.18) {
+    const c = getCtx(), dst = getDest();
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.connect(g); g.connect(dst);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    osc.start(start); osc.stop(start + dur + 0.02);
+  }
+
+  // Short white-noise burst (hi-hat)
+  function hihat(start, vol=0.06) {
+    const c = getCtx(), dst = getDest();
+    const buf = c.createBuffer(1, Math.ceil(c.sampleRate * 0.04), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), filt = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; filt.type = 'highpass'; filt.frequency.value = 7000;
+    src.connect(filt); filt.connect(g); g.connect(dst);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.04);
+    src.start(start); src.stop(start + 0.05);
+  }
+
+  // Kick drum
+  function kick(start) {
+    const c = getCtx(), dst = getDest();
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.connect(g); g.connect(dst);
+    osc.frequency.setValueAtTime(160, start);
+    osc.frequency.exponentialRampToValueAtTime(40, start + 0.18);
+    g.gain.setValueAtTime(0.35, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+    osc.start(start); osc.stop(start + 0.23);
+  }
+
+  // BGM melody — 8 beats, loops ~3.6 s at TEMPO=0.45
+  const TEMPO = 0.45; // seconds per quarter-note  (~133 BPM)
+  const MELODY = [
+    [523,.25],[659,.25],[784,.25],[880,.25],  // beat 1
+    [784,.5],[659,.25],[523,.25],             // beat 2
+    [587,.25],[698,.25],[880,.25],[784,.25],  // beat 3
+    [659,.5],[523,.5],                        // beat 4
+    [392,.25],[440,.25],[523,.25],[659,.25],  // beat 5
+    [784,.5],[659,.25],[587,.25],             // beat 6
+    [523,.25],[659,.25],[784,.25],[1047,.25], // beat 7
+    [784,.25],[659,.25],[523,.25],[392,.25],  // beat 8
+  ];
+  const BASS = [[131,2],[196,2],[165,2],[196,2],[131,2],[220,2],[175,2],[196,2]];
+  const TOTAL_BEATS = MELODY.reduce((s,[,b])=>s+b, 0); // 8
+
+  function scheduleBGM(startTime) {
+    if (!bgmPlaying) return;
+    const c = getCtx();
+    let mt = startTime;
+    for (const [f, b] of MELODY) {
+      tone(f, b * TEMPO * 0.82, mt, 'triangle', 0.12);
+      mt += b * TEMPO;
+    }
+    // Bass
+    let bt = startTime;
+    for (const [f, b] of BASS) {
+      tone(f, b * TEMPO * 0.88, bt, 'sine', 0.16);
+      bt += b * TEMPO;
+    }
+    // Kick + hi-hat per beat
+    for (let b = 0; b < TOTAL_BEATS; b++) {
+      const t = startTime + b * TEMPO;
+      if (b % 2 === 0) kick(t);
+      hihat(t + TEMPO * 0.5);
+    }
+    const loopSec = TOTAL_BEATS * TEMPO;
+    bgmLoopId = setTimeout(() => scheduleBGM(c.currentTime + 0.05), (loopSec - 0.35) * 1000);
+  }
+
+  return {
+    get bgmOn() { return state.bgm; },
+    get sfxOn() { return state.sfx; },
+
+    startBGM() {
+      if (!state.bgm || bgmPlaying) return;
+      bgmPlaying = true;
+      scheduleBGM(getCtx().currentTime + 0.1);
+    },
+    stopBGM() {
+      bgmPlaying = false;
+      clearTimeout(bgmLoopId);
+    },
+    toggleBGM() {
+      state.bgm = !state.bgm;
+      state.bgm ? this.startBGM() : this.stopBGM();
+      return state.bgm;
+    },
+    toggleSFX() { state.sfx = !state.sfx; return state.sfx; },
+    setVolume(v) {
+      state.volume = Math.max(0, Math.min(1, v));
+      if (masterGain) masterGain.gain.value = state.volume;
+    },
+    getVolume() { return state.volume; },
+    toggleMute() {
+      if (masterGain) {
+        const muted = masterGain.gain.value === 0;
+        masterGain.gain.value = muted ? state.volume : 0;
+        return muted; // returns true if now UNmuted
+      }
+      return true;
+    },
+
+    sfxHit(pts) {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      tone(120, 0.04, t, 'square', 0.28);
+      tone(pts >= 6 ? 1047 : pts >= 4 ? 880 : 659, 0.18, t+0.04, 'sine', 0.2);
+    },
+    sfxTray() {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      tone(880, 0.45, t, 'sawtooth', 0.14);
+      tone(1109, 0.3, t+0.02, 'sawtooth', 0.09);
+      tone(440, 0.5, t+0.05, 'triangle', 0.11);
+    },
+    sfxFever() {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      [523,659,784,1047,1319].forEach((f,i) => tone(f,.2,t+i*.08,'sine',.2));
+    },
+    sfxLevelUp() {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      [523,659,784,1047].forEach((f,i) => tone(f,.25,t+i*.12,'triangle',.18));
+    },
+    sfxStart() {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      [392,523,659,784].forEach((f,i) => tone(f,.2,t+i*.1,'triangle',.18));
+    },
+    sfxEnd() {
+      if (!state.sfx) return;
+      const c = getCtx(), t = c.currentTime;
+      [523,659,784,1047,784,659,523].forEach((f,i) => tone(f,.25,t+i*.15,'triangle',.2));
+    },
+    sfxMiss() {
+      if (!state.sfx) return;
+      tone(180, 0.15, getCtx().currentTime, 'square', 0.1);
+    },
+  };
+})();
+
+// ============================================================
+// ONLINE MULTIPLAYER (Socket.io)
+// ============================================================
+const ONLINE = {
+  enabled: false,
+  isHost: false,
+  socket: null,
+  roomCode: '',
+  password: '',
+  myId: '',
+  publicURL:  null,  // 공개 URL (서버에서 수신)
+  isFixedURL: false, // true = 항상 같은 주소
+  players: {},
+  scoreInterval: null,
+};
+
+function setupSocketHandlers(s) {
+  s.on('connect', () => {
+    ONLINE.myId = s.id;
+  });
+
+  s.on('room_created', ({ code, publicURL, isFixedURL }) => {
+    ONLINE.roomCode   = code;
+    ONLINE.myId       = s.id;
+    ONLINE.publicURL  = publicURL  || null;
+    ONLINE.isFixedURL = isFixedURL || false;
+    document.getElementById('lobby-room-code').textContent = code;
+    document.getElementById('lobby-status').textContent = '🏠 방장 · 아래 버튼으로 친구를 초대하세요!';
+    document.getElementById('lobby-start-btn').style.display = 'block';
+    generateRoomQR(code);
+    updateLobbyUI();
+  });
+
+  s.on('join_ok', ({ code }) => {
+    ONLINE.roomCode = code;
+    ONLINE.myId = s.id;
+    document.getElementById('lobby-guest-room-code').textContent = code;
+    document.getElementById('lobby-status').textContent = '🚪 참여 완료 · 방장을 기다리는 중';
+  });
+
+  s.on('join_error', msg => {
+    document.getElementById('lobby-status').textContent = '⛔ ' + msg;
+    setTimeout(cancelLobby, 2000);
+  });
+
+  s.on('room_update', ({ players, host }) => {
+    ONLINE.players = players;
+    ONLINE.isHost  = (host === s.id);
+    if (STATE.gameRunning) {
+      updateOnlineScoreboard();
+    } else {
+      updateLobbyUI();
+      if (ONLINE.isHost) {
+        document.getElementById('lobby-start-btn').style.display = 'block';
+        if (ONLINE.roomCode) generateRoomQR(ONLINE.roomCode);
+      }
+    }
+  });
+
+  s.on('host_changed', hostId => {
+    ONLINE.isHost = (hostId === s.id);
+    if (ONLINE.isHost) {
+      document.getElementById('lobby-host-share').style.display = 'block';
+      document.getElementById('lobby-guest-code').style.display = 'none';
+      document.getElementById('lobby-room-code').textContent = ONLINE.roomCode;
+      document.getElementById('lobby-start-btn').style.display = 'block';
+      document.getElementById('lobby-status').textContent = '🏠 방장이 되었습니다!';
+      generateRoomQR(ONLINE.roomCode);
+    }
+    updateLobbyUI();
+  });
+
+  s.on('game_start', () => {
+    showScreen('game');
+    setTimeout(() => startGame(), 300);
+  });
+
+  s.on('score_broadcast', ({ players }) => {
+    ONLINE.players = players;
+    updateOnlineScoreboard();
+  });
+
+  s.on('all_finished', ({ players }) => {
+    ONLINE.players = players;
+    if (STATE.gameRunning) {
+      endGame();
+    } else {
+      showEndScreen(); // 내 게임이 이미 끝났으면 결과 화면 갱신
+    }
+  });
+
+  s.on('connect_error', () => {
+    document.getElementById('lobby-status').textContent =
+      '⚠️ 서버에 연결할 수 없습니다. start.bat이 실행 중인지 확인하세요.';
+  });
+}
+
+function initSocket() {
+  if (typeof io === 'undefined' || window.location.protocol === 'file:') {
+    document.getElementById('lobby-status').textContent =
+      '⚠️ start.bat으로 서버를 실행한 후 이용하세요!';
+    return false;
+  }
+  const s = io({ autoConnect: false, forceNew: true, timeout: 10000 });
+  setupSocketHandlers(s);
+  ONLINE.socket = s;
+  return true;
+}
+
+function createRoom(pw) {
+  const nickname = (document.getElementById('nickname-input').value.trim() || '방장').slice(0, 12);
+  STATE.player.name = nickname;
+  ONLINE.password = pw || '';
+  ONLINE.isHost = true;
+  ONLINE.enabled = true;
+  ONLINE.players = {};
+
+  showScreen('lobby');
+  document.getElementById('lobby-host-share').style.display = 'block';
+  document.getElementById('lobby-guest-code').style.display = 'none';
+  document.getElementById('lobby-room-code').textContent = '...';
+  document.getElementById('lobby-code-label').textContent = '방 번호';
+  document.getElementById('lobby-status').textContent = '서버에 연결 중...';
+  document.getElementById('lobby-start-btn').style.display = 'none';
+  document.getElementById('lobby-pw-badge').style.display = pw ? 'block' : 'none';
+  document.getElementById('lobby-pw-badge').textContent   = pw ? '🔒 비밀번호 방' : '';
+
+  if (!initSocket()) { showScreen('login'); return; }
+  ONLINE.socket.once('connect', () => {
+    ONLINE.socket.emit('create_room', { name: nickname, password: pw || '' });
+  });
+  ONLINE.socket.connect();
+}
+
+function joinRoom(code, pw) {
+  const nickname = (document.getElementById('nickname-input').value.trim() || '플레이어').slice(0, 12);
+  STATE.player.name = nickname;
+  ONLINE.password = pw || '';
+  ONLINE.isHost = false;
+  ONLINE.enabled = true;
+  ONLINE.players = {};
+
+  showScreen('lobby');
+  document.getElementById('lobby-host-share').style.display = 'none';
+  document.getElementById('lobby-guest-code').style.display = 'block';
+  document.getElementById('lobby-guest-room-code').textContent = code.toUpperCase();
+  document.getElementById('lobby-status').textContent = '서버에 연결 중...';
+  document.getElementById('lobby-start-btn').style.display = 'none';
+
+  if (!initSocket()) { showScreen('login'); return; }
+  ONLINE.socket.once('connect', () => {
+    ONLINE.socket.emit('join_room', { code, name: nickname, password: pw || '' });
+  });
+  ONLINE.socket.connect();
+}
+
+function updateLobbyUI() {
+  const list = document.getElementById('lobby-player-list');
+  const entries = Object.entries(ONLINE.players);
+  if (entries.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#b09080;font-size:0.82rem;">플레이어를 기다리는 중...</div>';
+    return;
+  }
+  list.innerHTML = entries.map(([id, p], i) => `
+    <div class="lobby-player-row">
+      <span style="color:#b09080;width:20px">${i+1}</span>
+      <span style="flex:1">${p.name}</span>
+      ${id === ONLINE.myId
+        ? '<span class="lobby-host-badge">' + (ONLINE.isHost ? '방장' : '나') + '</span>'
+        : (ONLINE.isHost ? '' : '')}
+    </div>`).join('');
+  if (ONLINE.isHost) {
+    document.getElementById('lobby-status').textContent =
+      `🏠 방장 · 참여자 ${entries.length}명`;
+  }
+}
+
+function startOnlineGame() {
+  if (ONLINE.socket) ONLINE.socket.emit('start_game');
+  // server의 game_start 이벤트가 모든 플레이어(방장 포함)에게 startGame() 트리거
+}
+
+function updateOnlineScoreboard() {
+  if (!ONLINE.enabled) return;
+  const myId = ONLINE.myId;
+  const entries = Object.entries(ONLINE.players)
+    .map(([id, p]) => ({
+      id, name: p.name,
+      score: id === myId ? STATE.player.score : (p.score || 0),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  document.getElementById('obs-rows').innerHTML = entries.map((p, i) => `
+    <div class="obs-row${p.id === myId ? ' obs-me' : ''}">
+      <span>${i+1}. ${p.name}</span>
+      <span>${p.score}</span>
+    </div>`).join('');
+}
+
+function startOnlineScoreSync() {
+  ONLINE.scoreInterval = setInterval(() => {
+    if (!STATE.gameRunning || !ONLINE.socket) return;
+    ONLINE.socket.emit('score_update', STATE.player.score);
+    updateOnlineScoreboard();
+  }, 1500);
+}
+
+function stopOnlineScoreSync() {
+  clearInterval(ONLINE.scoreInterval);
+  ONLINE.scoreInterval = null;
+}
+
+function cancelLobby() {
+  stopOnlineScoreSync();
+  if (ONLINE.socket) {
+    try {
+      ONLINE.socket.removeAllListeners();
+      ONLINE.socket.disconnect();
+    } catch(e) {}
+    ONLINE.socket = null;
+  }
+  ONLINE.enabled   = false;
+  ONLINE.isHost    = false;
+  ONLINE.players   = {};
+  ONLINE.myId      = '';
+  ONLINE.publicURL  = null;
+  ONLINE.isFixedURL = false;
+  document.getElementById('create-room-form').style.display = 'none';
+  showScreen('login');
+}
+
+// ── Login screen handlers ─────────────────────────────────────
+// 방 만들기 토글
+document.getElementById('create-room-btn').addEventListener('pointerdown', () => {
+  if (typeof io === 'undefined' || window.location.protocol === 'file:') {
+    alert('온라인 대전은 서버 실행 후 이용 가능합니다.\n\n① start.bat 실행\n② 브라우저에서 http://localhost:3456 접속');
+    return;
+  }
+  const cf = document.getElementById('create-room-form');
+  cf.style.display = cf.style.display === 'none' ? 'block' : 'none';
+  if (cf.style.display !== 'none') document.getElementById('create-pw-input').focus();
+});
+
+document.getElementById('do-create-btn').addEventListener('pointerdown', () => {
+  const pw = document.getElementById('create-pw-input').value.trim();
+  createRoom(pw);
+});
+
+document.getElementById('create-pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('do-create-btn').click();
+});
+
+// 방 참여 (항상 보임)
+document.getElementById('do-join-btn').addEventListener('pointerdown', () => {
+  if (typeof io === 'undefined' || window.location.protocol === 'file:') {
+    alert('온라인 대전은 서버 실행 후 이용 가능합니다.\n\n① start.bat 실행\n② 브라우저에서 http://localhost:3456 접속');
+    return;
+  }
+  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+  const pw   = document.getElementById('join-pw-input').value.trim();
+  if (code.length < 1) { document.getElementById('room-code-input').focus(); return; }
+  joinRoom(code, pw);
+});
+
+document.getElementById('room-code-input').addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+});
+document.getElementById('room-code-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('join-pw-input').focus();
+});
+document.getElementById('join-pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('do-join-btn').click();
+});
+
+// ── Lobby button handlers ─────────────────────────────────────
+document.getElementById('lobby-start-btn').addEventListener('pointerdown', () => {
+  if (ONLINE.isHost) startOnlineGame();
+});
+
+document.getElementById('lobby-cancel-btn').addEventListener('pointerdown', cancelLobby);
+
+// ── 게임 파일 다운로드 ─────────────────────────────────────────
+function downloadGameHTML() {
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'molypoly.html';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── 초대장 공유 (Web Share API 우선, 폴백: 클립보드) ──────────
+function getJoinURL(code) {
+  if (window.location.protocol === 'file:') return null;
+  // 공개 URL(localtunnel) 있으면 우선 사용, 없으면 로컬 IP 사용
+  const base = ONLINE.publicURL || window.location.origin;
+  return `${base}/?room=${code}`;
+}
+
+async function shareRoomInvite(code) {
+  const joinURL  = getJoinURL(code);
+  const pwHint   = ONLINE.password ? `\n🔒 비밀번호: ${ONLINE.password}` : '';
+  const isPublic = !!ONLINE.publicURL;
+  const text = joinURL
+    ? `🐾 MolyPoly 두더지 잡기 초대!\n👉 ${joinURL}${pwHint}${isPublic ? '' : '\n\n(같은 WiFi에서 접속하세요)'}`
+    : `🐾 MolyPoly 두더지 잡기 초대!\n방 번호: ${code}${pwHint}`;
+
+  if (navigator.share) {
+    try { await navigator.share({ title: '🐾 MolyPoly 게임 초대', text }); return; }
+    catch(e) { /* 폴백 */ }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('lobby-share-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✅ 복사됨!';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  } catch(e) {
+    prompt('아래 내용을 복사해 친구에게 전달하세요:', text);
+  }
+}
+
+// ── QR코드 생성 + URL 박스 표시 ──────────────────────────────
+function generateRoomQR(code) {
+  const el   = document.getElementById('room-qr');
+  const hint = document.getElementById('room-qr-hint');
+  el.innerHTML = '';
+  const joinURL = getJoinURL(code);
+  const qrText  = joinURL || code;
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(el, {
+      text: qrText, width: 110, height: 110,
+      colorDark: '#c0390a', colorLight: '#fff8f5',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+  if (hint) {
+    if (ONLINE.publicURL) {
+      hint.textContent = '🌐 인터넷 공개 URL';
+      hint.style.color = '#2e7d32';
+    } else if (joinURL) {
+      hint.textContent = '📶 WiFi 전용 URL';
+      hint.style.color = '#e65100';
+    } else {
+      hint.textContent = 'QR 스캔';
+      hint.style.color = '#b09080';
+    }
+  }
+
+  // ── URL 박스 업데이트 ──────────────────────────────────────
+  const urlBox   = document.getElementById('lobby-url-box');
+  const urlText  = document.getElementById('lobby-url-text');
+  const urlBadge = document.getElementById('lobby-url-badge');
+  if (joinURL && urlBox) {
+    urlBox.style.display = 'block';
+    urlText.textContent  = joinURL;
+    if (ONLINE.publicURL) {
+      const fixed = ONLINE.isFixedURL;
+      urlBadge.textContent     = fixed
+        ? '🔒 고정 URL — 항상 같은 주소입니다. 한 번만 알려주면 됩니다!'
+        : '⚠️ 임시 URL — 서버 재시작 시 변경됩니다 (config.json 에서 고정 가능)';
+      urlBadge.style.color     = fixed ? '#2e7d32' : '#b45309';
+      urlBox.style.borderColor = fixed ? '#81c784' : '#ffb74d';
+      urlBox.style.background  = fixed ? '#e8f5e9' : '#fff3e0';
+    } else {
+      urlBadge.textContent = '📶 같은 WiFi 기기만 접속 가능';
+      urlBadge.style.color = '#e65100';
+    }
+  } else if (urlBox) {
+    urlBox.style.display = 'none';
+  }
+}
+
+// ── 로비 공유 버튼 ─────────────────────────────────────────────
+document.getElementById('lobby-share-btn').addEventListener('pointerdown', () => {
+  shareRoomInvite(ONLINE.roomCode);
+});
+document.getElementById('lobby-dl-btn').addEventListener('pointerdown', downloadGameHTML);
+document.getElementById('lobby-url-copy').addEventListener('pointerdown', () => {
+  const url = document.getElementById('lobby-url-text').textContent;
+  if (!url) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('lobby-url-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    btn.style.background = '#2e7d32';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = '#e65100'; }, 2000);
+  }).catch(() => {
+    // clipboard 실패 시 수동 선택
+    const el = document.getElementById('lobby-url-text');
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+});
+
+
+</script>
+
+<!-- AUDIO CONTROLS (fixed, always visible) -->
+<div id="audio-controls">
+  <div id="volume-panel" class="hidden-panel">
+    <span id="vol-icon" title="음소거">🔊</span>
+    <input type="range" id="vol-slider" min="0" max="100" value="70" title="음량"/>
+    <span id="vol-pct">70%</span>
+  </div>
+  <div id="audio-btn-row">
+    <button class="audio-btn" id="bgm-btn" title="배경음악">🎵</button>
+    <button class="audio-btn" id="sfx-btn" title="효과음">🔊</button>
+    <button class="audio-btn" id="vol-btn" title="음량 조절">🎚️</button>
+  </div>
+</div>
+
+<script>
+/* ── Audio controls (must run AFTER the elements exist) ── */
+document.getElementById('bgm-btn').addEventListener('pointerdown', () => {
+  const on = AudioEngine.toggleBGM();
+  document.getElementById('bgm-btn').classList.toggle('off', !on);
+});
+document.getElementById('sfx-btn').addEventListener('pointerdown', () => {
+  const on = AudioEngine.toggleSFX();
+  document.getElementById('sfx-btn').classList.toggle('off', !on);
+});
+
+(function() {
+  const panel  = document.getElementById('volume-panel');
+  const slider = document.getElementById('vol-slider');
+  const pctEl  = document.getElementById('vol-pct');
+  const volBtn = document.getElementById('vol-btn');
+  const icon   = document.getElementById('vol-icon');
+  let panelOpen = false;
+
+  function updateSliderTrack(v) {
+    slider.style.setProperty('--pct', v + '%');
+    pctEl.textContent = v + '%';
+    icon.textContent  = v === 0 ? '🔇' : v < 40 ? '🔉' : '🔊';
+  }
+
+  volBtn.addEventListener('pointerdown', () => {
+    panelOpen = !panelOpen;
+    panel.classList.toggle('hidden-panel', !panelOpen);
+    volBtn.classList.toggle('off', !panelOpen);
+  });
+
+  slider.addEventListener('input', () => {
+    const v = parseInt(slider.value, 10);
+    updateSliderTrack(v);
+    AudioEngine.setVolume(v / 100);
+  });
+
+  icon.addEventListener('pointerdown', () => {
+    const unmuted = AudioEngine.toggleMute();
+    if (unmuted) {
+      slider.value = Math.round(AudioEngine.getVolume() * 100);
+      updateSliderTrack(parseInt(slider.value, 10));
+    } else {
+      updateSliderTrack(0);
+    }
+  });
+
+  updateSliderTrack(70);
+})();
+
+/* ── 로그인 화면 게임 파일 저장 버튼 ── */
+document.getElementById('login-dl-btn').addEventListener('pointerdown', downloadGameHTML);
+</script>
+</body>
+</html>
