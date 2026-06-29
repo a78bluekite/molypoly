@@ -757,7 +757,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 }
 .room-code-big{
   letter-spacing:8px;text-transform:uppercase;font-size:1.3rem !important;
-  font-family:'Fredoka One',sans-serif !important;text-align:center;
+  font-family:'Jua',sans-serif !important;text-align:center;
 }
 .join-primary-btn{
   background:linear-gradient(135deg,#ff7043,#e91e63) !important;
@@ -825,8 +825,8 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 /* ===== CHARACTER PICKER ===== */
 .char-pick-row{margin:4px 0 2px;}
 .char-pick-label{font-size:0.7rem;font-weight:700;color:#8a5a3a;margin-bottom:5px;text-align:center;}
-.char-pick-options{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
-.char-pick-card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border-radius:8px;border:2px solid transparent;cursor:pointer;background:rgba(255,255,255,0.45);transition:all 0.15s;}
+.char-pick-options{display:flex;gap:4px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;}
+.char-pick-card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 5px;border-radius:8px;border:2px solid transparent;cursor:pointer;background:rgba(255,255,255,0.45);transition:all 0.15s;flex-shrink:0;}
 .char-pick-card.selected{border-color:#e91e63;background:rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(233,30,99,0.25);}
 .char-pick-card:hover{background:rgba(255,255,255,0.7);}
 .char-pick-name{font-size:0.52rem;color:#5a3a2a;font-weight:600;white-space:nowrap;}
@@ -834,7 +834,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 /* ===== HAMMER SKIN PICKER ===== */
 .hammer-pick-row{margin:4px 0 2px;}
 .hammer-pick-label{font-size:0.7rem;font-weight:700;color:#8a5a3a;margin-bottom:5px;text-align:center;}
-.hammer-pick-options{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.hammer-pick-options{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;}
 .hammer-pick-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 7px;border-radius:8px;border:2px solid transparent;cursor:pointer;background:rgba(255,255,255,0.45);transition:all 0.15s;min-width:50px;}
 .hammer-pick-card.selected{border-color:#e91e63;background:rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(233,30,99,0.25);}
 .hammer-pick-card:hover{background:rgba(255,255,255,0.7);}
@@ -866,29 +866,37 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   .login-subtitle{font-size:0.82rem;margin-bottom:12px;}
   /* 모바일 로그인 화면 최적화 */
   #login-screen{overflow-y:auto;overflow-x:hidden;padding:8px 0;}
-  .login-card{max-height:none;padding:14px 14px 18px;margin:0 auto;width:calc(100% - 16px);max-width:360px;}
-  .login-title{font-size:1.5rem;}
-  .login-subtitle{font-size:0.72rem;margin-bottom:6px;}
-  .mole-preview{width:64px;height:64px;margin:4px auto 6px;}
-  .login-input{padding:8px 10px;font-size:0.82rem;margin-bottom:6px;}
-  .join-section{padding:8px 10px;margin-bottom:6px;}
-  .join-section-title{font-size:0.72rem;}
-  .solo-row{gap:6px;}
-  .hammer-pick-options{gap:4px;}
-  .hammer-pick-card{min-width:44px;padding:4px 5px;}
-  .hammer-pick-name{font-size:0.5rem;}
-  .hammer-pick-preview{width:32px;height:13px;}
-  .char-pick-options{gap:4px;}
+  .login-card{max-height:none;padding:10px 12px 12px;margin:0 auto;width:calc(100% - 16px);max-width:360px;}
+  .login-title{font-size:1.35rem;margin-bottom:1px;}
+  .login-subtitle{font-size:0.66rem;margin-bottom:3px;}
+  .mole-preview{width:52px;height:52px;margin:2px auto 3px;}
+  .login-input{padding:7px 10px;font-size:0.8rem;margin-bottom:3px;}
+  .login-btn{margin-top:6px;padding:9px;font-size:0.9rem;}
+  .join-section{padding:6px 8px;margin:3px 0;}
+  .join-section-title{font-size:0.68rem;margin-bottom:3px;}
+  .login-or{margin:4px 0 3px;font-size:0.7rem;}
+  .solo-row{gap:4px;}
+  .hole-ctrl{margin:4px 0 0;padding:5px 8px;}
+  .char-pick-row{margin:2px 0 1px;}
+  .char-pick-label{font-size:0.63rem;margin-bottom:2px;}
+  .char-pick-options{gap:3px;}
   .char-pick-card{padding:3px 4px;}
-  .char-pick-name{font-size:0.48rem;}
+  .char-pick-name{font-size:0.46rem;}
+  .hammer-pick-row{margin:2px 0 1px;}
+  .hammer-pick-label{font-size:0.63rem;margin-bottom:2px;}
+  .hammer-pick-options{gap:3px;}
+  .hammer-pick-card{min-width:40px;padding:3px 4px;}
+  .hammer-pick-name{font-size:0.46rem;}
+  .hammer-pick-preview{width:30px;height:12px;}
   /* 게임 화면 */
-  #game-field{margin-top:56px;}
-  #top-ui{padding:5px 8px;gap:4px;}
-  .ui-card{padding:3px 8px;}
-  .ui-card .value{font-size:0.88rem;}
-  .ui-card .label{font-size:0.6rem;}
-  #hammer-badge{padding:3px 8px;font-size:0.68rem;}
-  .bg-toggle{padding:4px 8px;font-size:0.72rem;}
+  #game-field{margin-top:52px;}
+  #top-ui{padding:4px 6px;gap:3px;flex-wrap:nowrap;overflow:hidden;}
+  .ui-card{padding:3px 7px;flex-shrink:0;}
+  .ui-card .value{font-size:0.85rem;}
+  .ui-card .label{font-size:0.58rem;}
+  #hammer-badge{padding:3px 7px;font-size:0.65rem;flex-shrink:0;}
+  #game-hole-card{display:none;}
+  .bg-toggle{padding:3px 7px;font-size:0.68rem;flex-shrink:0;}
   #audio-controls{bottom:10px;right:8px;gap:4px;}
   .audio-btn{width:38px;height:38px;font-size:1rem;}
   #vol-slider{width:70px;}
@@ -1786,7 +1794,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
       <span class="value" id="combo-val">0</span>
     </div>
     <div id="hammer-badge">🔨 <span id="hammer-level-txt">Lv.1 뿅망치</span></div>
-    <div class="ui-card" style="gap:4px;">
+    <div class="ui-card" id="game-hole-card" style="gap:4px;">
       <span class="label">🕳 굴</span>
       <button class="hole-ctrl-btn" id="game-hole-dec" style="width:22px;height:22px;font-size:0.85rem;">−</button>
       <span class="value" id="game-hole-val" style="font-size:0.85rem;min-width:28px;text-align:center;">9</span>
@@ -3529,6 +3537,17 @@ const AudioEngine = (() => {
       return state.bgm;
     },
     toggleSFX() { state.sfx = !state.sfx; return state.sfx; },
+    unlock() {
+      // 모바일 AudioContext 잠금 해제 — 첫 터치 시 호출
+      const c = getCtx();
+      try {
+        const buf = c.createBuffer(1, 1, c.sampleRate);
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        src.connect(masterGain);
+        src.start(0);
+      } catch(e) {}
+    },
     setVolume(v) {
       state.volume = Math.max(0, Math.min(1, v));
       if (masterGain) masterGain.gain.value = state.volume;
@@ -4056,6 +4075,9 @@ document.getElementById('sfx-btn').addEventListener('pointerdown', () => {
 
 /* ── 로그인 화면 게임 파일 저장 버튼 ── */
 document.getElementById('login-dl-btn').addEventListener('pointerdown', downloadGameHTML);
+
+/* ── 모바일 오디오 잠금 해제 — 첫 터치/클릭 시 AudioContext 활성화 ── */
+document.addEventListener('pointerdown', () => AudioEngine.unlock(), { once: true });
 </script>
 </body>
 </html>
