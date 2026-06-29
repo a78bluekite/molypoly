@@ -822,6 +822,26 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 .obs-row{font-size:0.78rem;font-weight:700;color:#5a3e2b;display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
 .obs-row.obs-me{color:#d4380d;font-weight:900;}
 
+/* ===== HAMMER SKIN PICKER ===== */
+.hammer-pick-row{margin:4px 0 2px;}
+.hammer-pick-label{font-size:0.7rem;font-weight:700;color:#8a5a3a;margin-bottom:5px;text-align:center;}
+.hammer-pick-options{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.hammer-pick-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 7px;border-radius:8px;border:2px solid transparent;cursor:pointer;background:rgba(255,255,255,0.45);transition:all 0.15s;min-width:50px;}
+.hammer-pick-card.selected{border-color:#e91e63;background:rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(233,30,99,0.25);}
+.hammer-pick-card:hover{background:rgba(255,255,255,0.7);}
+.hammer-pick-preview{width:38px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,0.12);}
+.hammer-pick-name{font-size:0.55rem;color:#5a3a2a;text-align:center;font-weight:600;white-space:nowrap;}
+
+/* ===== RULES MODAL ===== */
+#rules-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);}
+#rules-modal.open{display:flex;}
+.rules-box{background:#fff8f5;border-radius:16px;padding:20px 22px;max-width:320px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.25);}
+.rules-title{font-size:1.1rem;font-weight:900;color:#c0390a;margin-bottom:12px;text-align:center;}
+.rules-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;}
+.rules-list li{font-size:0.75rem;color:#5a3a2a;line-height:1.5;padding:6px 9px;background:rgba(255,200,160,0.2);border-radius:7px;}
+.rules-close{display:block;margin:14px auto 0;padding:7px 24px;background:#e91e63;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;}
+.rules-btn{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,0.85);font-size:0.85rem;cursor:pointer;font-weight:700;color:#c0390a;box-shadow:0 1px 4px rgba(0,0,0,0.15);z-index:10;}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (hover:none) and (pointer:coarse){
   #hammer-cursor{display:none!important;}
@@ -835,7 +855,21 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   .login-card{padding:24px 18px;border-radius:24px;}
   .login-title{font-size:2rem;}
   .login-subtitle{font-size:0.82rem;margin-bottom:12px;}
-  .mole-preview{width:70px;height:70px;margin:8px auto 16px;}
+  /* 모바일 로그인 화면 최적화 */
+  #login-screen{overflow-y:auto;overflow-x:hidden;padding:8px 0;}
+  .login-card{max-height:none;padding:14px 14px 18px;margin:0 auto;width:calc(100% - 16px);max-width:360px;}
+  .login-title{font-size:1.5rem;}
+  .login-subtitle{font-size:0.72rem;margin-bottom:6px;}
+  .mole-preview{width:56px;height:56px;margin:4px auto 8px;}
+  .login-input{padding:8px 10px;font-size:0.82rem;margin-bottom:6px;}
+  .join-section{padding:8px 10px;margin-bottom:6px;}
+  .join-section-title{font-size:0.72rem;}
+  .solo-row{gap:6px;}
+  .hammer-pick-options{gap:4px;}
+  .hammer-pick-card{min-width:44px;padding:4px 5px;}
+  .hammer-pick-name{font-size:0.5rem;}
+  .hammer-pick-preview{width:32px;height:13px;}
+  /* 게임 화면 */
   #game-field{margin-top:56px;}
   #top-ui{padding:5px 8px;gap:4px;}
   .ui-card{padding:3px 8px;}
@@ -966,17 +1000,40 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
       <button class="login-btn join-primary-btn" id="do-join-btn">🚀 방에 참여하기</button>
     </div>
 
+    <!-- 망치 선택 -->
+    <div class="hammer-pick-row">
+      <div class="hammer-pick-label">🔨 망치 선택</div>
+      <div class="hammer-pick-options" id="hammer-pick-options"></div>
+    </div>
+
     <!-- 구분선 -->
     <div class="login-or"><span>또는</span></div>
 
     <!-- ② 혼자 하기 / 방 만들기 -->
     <div class="solo-row">
-      <!-- 두더지 굴 개수 -->
+      <!-- 두더지 굴 가로/세로 개수 -->
       <div class="hole-ctrl">
-        <span class="hole-ctrl-label">🕳 두더지 굴의 개수</span>
-        <button class="hole-ctrl-btn" id="hole-dec-btn">−</button>
-        <div><div class="hole-ctrl-val" id="hole-ctrl-val">9개 (3×3)</div></div>
-        <button class="hole-ctrl-btn" id="hole-inc-btn">+</button>
+        <span class="hole-ctrl-label">🕳 두더지 굴</span>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:3px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:0.58rem;color:#a07060;">가로</span>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <button class="hole-ctrl-btn" id="hole-col-dec">−</button>
+              <div class="hole-ctrl-val" id="hole-col-val" style="min-width:18px;">3</div>
+              <button class="hole-ctrl-btn" id="hole-col-inc">+</button>
+            </div>
+          </div>
+          <span style="font-size:1rem;color:#c09080;margin-top:14px;">×</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:0.58rem;color:#a07060;">세로</span>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <button class="hole-ctrl-btn" id="hole-row-dec">−</button>
+              <div class="hole-ctrl-val" id="hole-row-val" style="min-width:18px;">3</div>
+              <button class="hole-ctrl-btn" id="hole-row-inc">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="hole-ctrl-hint" id="hole-ctrl-val">총 9개</div>
       </div>
       <button class="login-btn solo-btn" id="start-btn">🔨 혼자 하기</button>
       <button class="create-btn" id="create-room-btn">🏠 방 만들기</button>
@@ -990,9 +1047,29 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
       <button class="login-btn" id="do-create-btn">방 만들기! 🏠</button>
     </div>
 
-    <div style="text-align:center;margin-top:10px;">
+    <div style="text-align:center;margin-top:10px;display:flex;justify-content:center;gap:12px;align-items:center;">
+      <button id="rules-open-btn" style="background:rgba(255,200,160,0.4);border:1.5px solid #e0b090;border-radius:8px;cursor:pointer;color:#a07050;font-size:0.76rem;font-family:'Jua',sans-serif;padding:4px 12px;">❓ 게임 규칙</button>
       <button id="login-dl-btn" style="background:none;border:none;cursor:pointer;color:#a09080;font-size:0.76rem;text-decoration:underline;font-family:'Jua',sans-serif;padding:2px 6px;">⬇️ 게임 파일 저장</button>
     </div>
+  </div>
+</div>
+
+<!-- RULES MODAL -->
+<div id="rules-modal">
+  <div class="rules-box">
+    <div class="rules-title">🔨 MolyPoly 게임 규칙</div>
+    <ul class="rules-list">
+      <li>⏱ <b>60초</b> 안에 최대한 많은 두더지를 잡으세요!</li>
+      <li>🐾 <b>일반 두더지</b> — 클릭하면 +3점</li>
+      <li>🟢 <b>초록 두더지</b> — 머리 부분만 클릭! 맞추면 +5점</li>
+      <li>🌈 <b>무지개 두더지</b> — +8점, 파티클 폭발!</li>
+      <li>💛 <b>점프 두더지</b> — 잡으면 +4점이지만 콤보 리셋</li>
+      <li>🔥 <b>연속 콤보</b>로 망치 레벨 업! 7콤보=Lv2, 14콤보=Lv3</li>
+      <li>🌡️ <b>트레이 두더지</b>를 피하세요 — 점수 감점!</li>
+      <li>🐿 <b>날다람쥐</b>도 조심! 잡으면 -1점</li>
+      <li>⚡ <b>피버 타임</b> — 콤보 중 발동, 점수 2배!</li>
+    </ul>
+    <button class="rules-close" id="rules-close-btn">확인!</button>
   </div>
 </div>
 
@@ -1791,6 +1868,7 @@ const STATE = {
   player: { id:'local_player', name:'플레이어', score:0, combo:0, maxCombo:0, kills:{} },
   timer: 60,
   hammerLevel: 1,
+  hammerSkin: 'default',
   feverActive: false,
   feverTimer: 0,
   bgMode: 'river',
@@ -1817,49 +1895,79 @@ document.addEventListener('mousemove', e => {
   hammerCursor.style.top  = e.clientY + 'px';
 });
 
-function triggerHammerSwing() {
+function triggerHammerSwing(x, y) {
+  const isMobile = window.matchMedia('(hover:none) and (pointer:coarse)').matches;
+  if (isMobile && x != null && y != null) {
+    // 망치 헤드 중심(SVG 내 x≈44, y≈22)을 탭 위치에 맞춤
+    hammerCursor.style.left = (x - 44) + 'px';
+    hammerCursor.style.top  = (y - 22) + 'px';
+    hammerCursor.style.setProperty('display', 'block', 'important');
+  }
   hammerCursor.classList.remove('hit');
   void hammerCursor.offsetWidth;
   hammerCursor.classList.add('hit');
-  setTimeout(() => hammerCursor.classList.remove('hit'), 300);
+  setTimeout(() => {
+    hammerCursor.classList.remove('hit');
+    if (isMobile) hammerCursor.style.removeProperty('display');
+  }, 300);
 }
 
-// Update hammer visuals by level — 그라데이션 SVG stop 색상 변경
+// ── 망치 스킨 선택 UI 초기화 ──────────────────────────────────
+function initHammerPicker() {
+  const container = document.getElementById('hammer-pick-options');
+  if (!container) return;
+  container.innerHTML = '';
+  HAMMER_SKINS.forEach(skin => {
+    const card = document.createElement('div');
+    card.className = 'hammer-pick-card' + (skin.key === STATE.hammerSkin ? ' selected' : '');
+    card.dataset.skin = skin.key;
+    const [c1, c2, c3] = skin.head;
+    card.innerHTML = `<div class="hammer-pick-preview" style="background:linear-gradient(to bottom,${c1},${c2},${c3});"></div><div class="hammer-pick-name">${skin.emoji} ${skin.name}</div>`;
+    card.addEventListener('pointerdown', () => {
+      STATE.hammerSkin = skin.key;
+      document.querySelectorAll('.hammer-pick-card').forEach(c => c.classList.toggle('selected', c.dataset.skin === skin.key));
+      updateHammerVisual(STATE.hammerLevel);
+    });
+    container.appendChild(card);
+  });
+}
+
+// ── 망치 시각 업데이트 (레벨 + 스킨) ──────────────────────────
 function updateHammerVisual(level) {
-  const svg  = document.getElementById('hammer-svg');
-  const head = document.getElementById('hammer-head');
-  const grad = svg.querySelector('#headG, [id="headG"]') || svg.querySelector('linearGradient');
-  const txt  = document.getElementById('hammer-level-txt');
+  const svg      = document.getElementById('hammer-svg');
+  const txt      = document.getElementById('hammer-level-txt');
+  const headGrad = svg.querySelector('[id="headG"]') || svg.querySelectorAll('linearGradient')[1];
+  const hdlGrad  = svg.querySelector('[id="hdlG"]')  || svg.querySelectorAll('linearGradient')[0];
 
-  function setHeadGrad(top, mid, bot) {
-    if (grad && grad.children.length >= 3) {
-      grad.children[0].setAttribute('stop-color', top);
-      grad.children[1].setAttribute('stop-color', mid);
-      grad.children[2].setAttribute('stop-color', bot);
-    } else if (head) {
-      head.setAttribute('fill', mid);
-    }
+  const skin = HAMMER_SKINS.find(s => s.key === STATE.hammerSkin) || HAMMER_SKINS[0];
+
+  // 머리 그라데이션
+  if (headGrad) {
+    const stops = headGrad.querySelectorAll('stop');
+    if (stops[0]) stops[0].setAttribute('stop-color', skin.head[0]);
+    if (stops[1]) stops[1].setAttribute('stop-color', skin.head[1]);
+    if (stops[2]) stops[2].setAttribute('stop-color', skin.head[2]);
+  }
+  // 손잡이 그라데이션
+  if (hdlGrad) {
+    const stops = hdlGrad.querySelectorAll('stop');
+    if (stops[0]) stops[0].setAttribute('stop-color', skin.hdl[0]);
+    if (stops[1]) stops[1].setAttribute('stop-color', skin.hdl[1]);
+    if (stops[2]) stops[2].setAttribute('stop-color', skin.hdl[2]);
+    if (stops[3]) stops[3].setAttribute('stop-color', skin.hdl[1]);
+    if (stops[4]) stops[4].setAttribute('stop-color', skin.hdl[0]);
   }
 
-  if (level === 1) {
-    setHeadGrad('#f48fb1','#e91e63','#ad1457');
-    svg.style.filter    = 'none';
-    svg.style.transform = 'scale(1)';
-    txt.textContent     = 'Lv.1 뿅망치';
-    hammerCursor.style.filter = 'none';
-  } else if (level === 2) {
-    setHeadGrad('#90caf9','#4a7fb5','#1a4f8a');
-    svg.style.filter    = 'drop-shadow(0 0 10px #64b5f6)';
-    svg.style.transform = 'scale(1.2)';
-    txt.textContent     = 'Lv.2 🐱젤리망치';
-    hammerCursor.style.filter = 'drop-shadow(0 0 10px #42a5f5)';
-  } else {
-    setHeadGrad('#fff9c4','#ffd700','#f57f17');
-    svg.style.filter    = 'drop-shadow(0 0 14px rgba(255,210,0,0.95))';
-    svg.style.transform = 'scale(1.4)';
-    txt.textContent     = 'Lv.3 ✨황금망치';
-    hammerCursor.style.filter = 'drop-shadow(0 0 16px #ffd700)';
-  }
+  const glowBase = skin.glow || skin.head[1];
+  const scale    = level === 1 ? 'scale(1)' : level === 2 ? 'scale(1.2)' : 'scale(1.4)';
+  const glowSize = level === 1 ? null : level === 2 ? `drop-shadow(0 0 8px ${glowBase})` : `drop-shadow(0 0 14px ${glowBase})`;
+
+  svg.style.transform           = scale;
+  svg.style.filter              = glowSize || 'none';
+  hammerCursor.style.filter     = glowSize || 'none';
+
+  const suffix = level === 1 ? '' : level === 2 ? ' ✨' : ' 💫';
+  txt.textContent = `${skin.emoji} ${skin.name}${suffix}`;
 }
 
 // ============================================================
@@ -2281,49 +2389,60 @@ function svgTrayRed(hit=false) {
 // HOLES SETUP — 동적 개수
 // ============================================================
 // [개수, 열 수] 프리셋
-const HOLE_PRESETS = [
-  { count:4,  cols:2, label:'4개 (2×2)' },
-  { count:6,  cols:3, label:'6개 (2×3)' },
-  { count:9,  cols:3, label:'9개 (3×3)' },
-  { count:12, cols:4, label:'12개 (3×4)' },
-  { count:16, cols:4, label:'16개 (4×4)' },
-  { count:20, cols:5, label:'20개 (4×5)' },
-  { count:25, cols:5, label:'25개 (5×5)' },
-];
-let holePresetIdx = 2; // 기본 9개
+// ── 굴 격자 설정 (가로/세로 개별 지정) ───────────────────────
+const HOLE_MIN = 2, HOLE_MAX = 6;
+let holeCols = 3, holeRows = 3;
 
 const holes = [];
 
-function getHolePreset() { return HOLE_PRESETS[holePresetIdx]; }
-
-function changeHolePreset(dir) {
-  const next = holePresetIdx + dir;
-  if (next < 0 || next >= HOLE_PRESETS.length) return;
-  holePresetIdx = next;
-  updateHoleCountUI();
-  if (STATE.gameRunning) {
-    rebuildHolesDuringGame();
-  }
+function getHolePreset() {
+  return { cols: holeCols, count: holeCols * holeRows };
 }
 
+function changeHoleCols(dir) {
+  const next = holeCols + dir;
+  if (next < HOLE_MIN || next > HOLE_MAX) return;
+  holeCols = next;
+  updateHoleCountUI();
+  if (STATE.gameRunning) rebuildHolesDuringGame();
+}
+
+function changeHoleRows(dir) {
+  const next = holeRows + dir;
+  if (next < HOLE_MIN || next > HOLE_MAX) return;
+  holeRows = next;
+  updateHoleCountUI();
+  if (STATE.gameRunning) rebuildHolesDuringGame();
+}
+
+// 하위 호환 (게임 중 +/- 버튼은 전체 개수 기준으로 cols 조정)
+function changeHolePreset(dir) { changeHoleCols(dir); }
+
 function updateHoleCountUI() {
-  const p = getHolePreset();
+  const total = holeCols * holeRows;
   const loginVal = document.getElementById('hole-ctrl-val');
   const gameVal  = document.getElementById('game-hole-val');
-  if (loginVal) loginVal.textContent = p.label;
-  if (gameVal)  gameVal.textContent  = p.count;
+  if (loginVal) loginVal.textContent = `총 ${total}개`;
+  if (gameVal)  gameVal.textContent  = total;
 
-  document.getElementById('hole-dec-btn').disabled    = (holePresetIdx === 0);
-  document.getElementById('hole-inc-btn').disabled    = (holePresetIdx === HOLE_PRESETS.length - 1);
+  const colVal = document.getElementById('hole-col-val');
+  const rowVal = document.getElementById('hole-row-val');
+  if (colVal) colVal.textContent = holeCols;
+  if (rowVal) rowVal.textContent = holeRows;
+
+  const setDis = (id, v) => { const el = document.getElementById(id); if (el) el.disabled = v; };
+  setDis('hole-col-dec', holeCols <= HOLE_MIN);
+  setDis('hole-col-inc', holeCols >= HOLE_MAX);
+  setDis('hole-row-dec', holeRows <= HOLE_MIN);
+  setDis('hole-row-inc', holeRows >= HOLE_MAX);
   const gd = document.getElementById('game-hole-dec');
   const gi = document.getElementById('game-hole-inc');
-  if (gd) gd.disabled = (holePresetIdx === 0);
-  if (gi) gi.disabled = (holePresetIdx === HOLE_PRESETS.length - 1);
+  if (gd) gd.disabled = holeCols <= HOLE_MIN;
+  if (gi) gi.disabled = holeCols >= HOLE_MAX;
 }
 
 function adjustGameFieldScale() {
-  const { count, cols } = getHolePreset();
-  const rows = Math.ceil(count / cols);
+  const cols = holeCols, rows = holeRows, count = cols * rows;
   const fieldW = cols * 112 + (cols - 1) * 26;
   const fieldH = rows * 80  + (rows - 1) * 28;
   const maxW = window.innerWidth  - 24;
@@ -2336,8 +2455,7 @@ function adjustGameFieldScale() {
 
 function buildHoles() {
   const field = document.getElementById('game-field');
-  const { count, cols } = getHolePreset();
-  const rows = Math.ceil(count / cols);
+  const cols = holeCols, rows = holeRows, count = cols * rows;
 
   field.style.gridTemplateColumns = `repeat(${cols}, 112px)`;
   field.style.gridTemplateRows    = `repeat(${rows}, 80px)`;
@@ -2436,7 +2554,7 @@ function spawnFlyingSquirrel() {
 function handleFlyingSquirrelHit(el, e) {
   if (!STATE.gameRunning) return;
   clearTimeout(el._removeId);
-  triggerHammerSwing();
+  triggerHammerSwing(e.clientX, e.clientY);
   AudioEngine.sfxTray();
   el.innerHTML = svgFlyingSquirrel(true);
   el.classList.add('hit-sq');
@@ -2544,6 +2662,7 @@ function getMoleSVG(type, hit, finalHit) {
 
 function hideMole(moleData, wasHit) {
   if (!moleData.div.parentNode) return;
+  moleData.dead = true;
   clearTimeout(moleData.timeout);
   moleData.div.classList.remove('visible');
   moleData.div.classList.add('hit-anim');
@@ -2571,8 +2690,8 @@ function isValidGreenHit(e, moleDiv) {
 // HIT HANDLER
 // ============================================================
 function handleMoleHit(moleData, e) {
-  if (!STATE.gameRunning) return;
-  triggerHammerSwing();
+  if (!STATE.gameRunning || moleData.dead) return;
+  triggerHammerSwing(e.clientX, e.clientY);
 
   const { type, def, div } = moleData;
 
@@ -3134,7 +3253,7 @@ document.getElementById('game-field').addEventListener('pointerdown', (e) => {
   if (!STATE.gameRunning) return;
   // 빈 구멍(두더지 없는 곳) 클릭 — 헛손질
   if (e.target.classList.contains('hole') || e.target.classList.contains('hole-rim')) {
-    triggerHammerSwing();
+    triggerHammerSwing(e.clientX, e.clientY);
     if (STATE.player.combo > 0) {
       STATE.player.combo = 0;
       downgradeHammer();
@@ -3160,8 +3279,10 @@ document.getElementById('nickname-input').addEventListener('keydown', e => {
 });
 
 // 두더지 굴의 개수 버튼
-document.getElementById('hole-dec-btn').addEventListener('pointerdown', () => changeHolePreset(-1));
-document.getElementById('hole-inc-btn').addEventListener('pointerdown', () => changeHolePreset(+1));
+document.getElementById('hole-col-dec').addEventListener('pointerdown', () => changeHoleCols(-1));
+document.getElementById('hole-col-inc').addEventListener('pointerdown', () => changeHoleCols(+1));
+document.getElementById('hole-row-dec').addEventListener('pointerdown', () => changeHoleRows(-1));
+document.getElementById('hole-row-inc').addEventListener('pointerdown', () => changeHoleRows(+1));
 document.getElementById('game-hole-dec').addEventListener('pointerdown', () => changeHolePreset(-1));
 document.getElementById('game-hole-inc').addEventListener('pointerdown', () => changeHolePreset(+1));
 
@@ -3174,6 +3295,20 @@ document.addEventListener('keydown', e => {
 
 // 초기 UI 동기화
 updateHoleCountUI();
+initHammerPicker();
+
+// 게임 규칙 모달
+document.getElementById('rules-open-btn').addEventListener('pointerdown', () => {
+  document.getElementById('rules-modal').classList.add('open');
+});
+document.getElementById('rules-close-btn').addEventListener('pointerdown', () => {
+  document.getElementById('rules-modal').classList.remove('open');
+});
+document.getElementById('rules-modal').addEventListener('pointerdown', (e) => {
+  if (e.target === document.getElementById('rules-modal')) {
+    document.getElementById('rules-modal').classList.remove('open');
+  }
+});
 
 document.getElementById('play-again-btn').addEventListener('pointerdown', () => {
   if (ONLINE.enabled) {
@@ -3393,6 +3528,15 @@ const AudioEngine = (() => {
 // ============================================================
 // ONLINE MULTIPLAYER (Socket.io)
 // ============================================================
+// ── 망치 스킨 데이터 ──────────────────────────────────────────
+const HAMMER_SKINS = [
+  { key:'default', emoji:'🔨', name:'뿅망치',    head:['#f48fb1','#e91e63','#ad1457'], hdl:['#6d4c28','#a0784a','#c8a06a'], glow:null },
+  { key:'thor',    emoji:'⚡', name:'토르 망치', head:['#cfd8dc','#78909c','#37474f'], hdl:['#263238','#546e7a','#78909c'], glow:'#ffe066' },
+  { key:'fire',    emoji:'🔥', name:'불꽃 망치', head:['#ffcc80','#f44336','#b71c1c'], hdl:['#3e2723','#6d4c28','#a0784a'], glow:'#ff5722' },
+  { key:'ice',     emoji:'❄️', name:'얼음 망치', head:['#e1f5fe','#29b6f6','#0277bd'], hdl:['#78909c','#b0bec5','#eceff1'], glow:'#81d4fa' },
+  { key:'gold',    emoji:'✨', name:'황금 망치', head:['#fffde7','#ffd700','#e65100'], hdl:['#6d4c28','#b8860b','#daa520'], glow:'#ffd700' },
+];
+
 const ONLINE = {
   enabled: false,
   isHost: false,
