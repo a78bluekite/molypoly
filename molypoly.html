@@ -34,10 +34,11 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 #login-screen{
   background:linear-gradient(135deg,#ffecd2 0%,#fcb69f 50%,#ffecd2 100%);
   flex-direction:column;gap:20px;
+  overflow-y:auto;align-items:center;justify-content:flex-start;padding:20px 0 32px;
 }
 .login-card{
   background:linear-gradient(160deg,rgba(255,255,255,0.96) 0%,rgba(255,248,240,0.92) 100%);
-  border-radius:36px;padding:48px 56px;
+  border-radius:36px;padding:28px 40px;
   box-shadow:0 12px 48px rgba(255,100,60,0.2),0 2px 8px rgba(255,160,100,0.12),inset 0 1px 0 rgba(255,255,255,0.9);
   text-align:center;
   border:2px solid rgba(255,195,140,0.5);
@@ -58,7 +59,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   font-size:1rem;color:#c17b5a;margin-bottom:28px;
   letter-spacing:1px;
 }
-.mole-preview{margin:16px auto 28px;width:90px;height:90px;position:relative;
+.mole-preview{margin:10px auto 18px;width:80px;height:80px;position:relative;
   animation:moleFloat 2.4s ease-in-out infinite;transform-origin:center bottom;}
 @keyframes moleFloat{
   0%,100%{transform:translateY(0) rotate(-2deg) scale(1);}
@@ -976,17 +977,6 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
     <div class="mole-preview" id="mole-preview"></div>
     <input type="text" id="nickname-input" class="login-input" placeholder="닉네임을 입력하세요 ✨" maxlength="12"/>
 
-    <!-- ① 방 참여 (항상 보임, 핵심 CTA) -->
-    <div class="join-section">
-      <div class="join-section-title">🚪 방 번호로 참여</div>
-      <input type="text" id="room-code-input" class="login-input room-code-big"
-        placeholder="방 번호 6자리 입력" maxlength="6"
-        autocomplete="off" spellcheck="false"/>
-      <input type="password" id="join-pw-input" class="login-input"
-        placeholder="비밀번호 (없으면 빈칸)" maxlength="12"/>
-      <button class="login-btn join-primary-btn" id="do-join-btn">🚀 방에 참여하기</button>
-    </div>
-
     <!-- 캐릭터 선택 -->
     <div class="char-pick-row">
       <div class="char-pick-label">🐾 캐릭터 선택</div>
@@ -999,10 +989,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
       <div class="hammer-pick-options" id="hammer-pick-options"></div>
     </div>
 
-    <!-- 구분선 -->
-    <div class="login-or"><span>또는</span></div>
-
-    <!-- ② 혼자 하기 / 방 만들기 -->
+    <!-- ① 혼자 하기 / 방 만들기 -->
     <div class="solo-row">
       <!-- 두더지 굴 가로/세로 개수 -->
       <div class="hole-ctrl">
@@ -1038,6 +1025,20 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
         placeholder="방 비밀번호 설정 (없으면 빈칸)" maxlength="12"
         style="margin-bottom:8px;"/>
       <button class="login-btn" id="do-create-btn">방 만들기! 🏠</button>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="login-or"><span>멀티플레이어</span></div>
+
+    <!-- ② 방 참여 -->
+    <div class="join-section">
+      <div class="join-section-title">🚪 방 번호로 참여</div>
+      <input type="text" id="room-code-input" class="login-input room-code-big"
+        placeholder="방 번호 6자리 입력" maxlength="6"
+        autocomplete="off" spellcheck="false"/>
+      <input type="password" id="join-pw-input" class="login-input"
+        placeholder="비밀번호 (없으면 빈칸)" maxlength="12"/>
+      <button class="login-btn join-primary-btn" id="do-join-btn">🚀 방에 참여하기</button>
     </div>
 
     <div style="text-align:center;margin-top:10px;display:flex;justify-content:center;gap:12px;align-items:center;">
