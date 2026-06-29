@@ -52,7 +52,7 @@ io.on('connection', socket => {
   let myRoom = null;
   let myName = '플레이어';
 
-  socket.on('create_room', ({ name, password }) => {
+  socket.on('create_room', ({ name, password, moleChar }) => {
     let code;
     do { code = makeCode(); } while (rooms[code]);
     myRoom = code;
@@ -60,7 +60,7 @@ io.on('connection', socket => {
     rooms[code] = {
       password: password || '',
       host: socket.id,
-      players: { [socket.id]: { name: myName, score: 0, done: false } },
+      players: { [socket.id]: { name: myName, score: 0, done: false, moleChar: moleChar || 'brown' } },
       started: false,
     };
     socket.join(code);
@@ -68,7 +68,7 @@ io.on('connection', socket => {
     broadcastRoom(code);
   });
 
-  socket.on('join_room', ({ code, name, password }) => {
+  socket.on('join_room', ({ code, name, password, moleChar }) => {
     const roomCode = (code || '').toUpperCase();
     const room = rooms[roomCode];
     if (!room)          { socket.emit('join_error', '방이 없습니다'); return; }
@@ -78,7 +78,7 @@ io.on('connection', socket => {
     }
     myRoom = roomCode;
     myName = (name || '플레이어').slice(0, 12);
-    room.players[socket.id] = { name: myName, score: 0, done: false };
+    room.players[socket.id] = { name: myName, score: 0, done: false, moleChar: moleChar || 'brown' };
     socket.join(myRoom);
     socket.emit('join_ok', { code: myRoom, host: room.host });
     broadcastRoom(myRoom);

@@ -822,6 +822,15 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
 .obs-row{font-size:0.78rem;font-weight:700;color:#5a3e2b;display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
 .obs-row.obs-me{color:#d4380d;font-weight:900;}
 
+/* ===== CHARACTER PICKER ===== */
+.char-pick-row{margin:4px 0 2px;}
+.char-pick-label{font-size:0.7rem;font-weight:700;color:#8a5a3a;margin-bottom:5px;text-align:center;}
+.char-pick-options{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.char-pick-card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border-radius:8px;border:2px solid transparent;cursor:pointer;background:rgba(255,255,255,0.45);transition:all 0.15s;}
+.char-pick-card.selected{border-color:#e91e63;background:rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(233,30,99,0.25);}
+.char-pick-card:hover{background:rgba(255,255,255,0.7);}
+.char-pick-name{font-size:0.52rem;color:#5a3a2a;font-weight:600;white-space:nowrap;}
+
 /* ===== HAMMER SKIN PICKER ===== */
 .hammer-pick-row{margin:4px 0 2px;}
 .hammer-pick-label{font-size:0.7rem;font-weight:700;color:#8a5a3a;margin-bottom:5px;text-align:center;}
@@ -860,7 +869,7 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   .login-card{max-height:none;padding:14px 14px 18px;margin:0 auto;width:calc(100% - 16px);max-width:360px;}
   .login-title{font-size:1.5rem;}
   .login-subtitle{font-size:0.72rem;margin-bottom:6px;}
-  .mole-preview{width:56px;height:56px;margin:4px auto 8px;}
+  .mole-preview{width:64px;height:64px;margin:4px auto 6px;}
   .login-input{padding:8px 10px;font-size:0.82rem;margin-bottom:6px;}
   .join-section{padding:8px 10px;margin-bottom:6px;}
   .join-section-title{font-size:0.72rem;}
@@ -869,6 +878,9 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   .hammer-pick-card{min-width:44px;padding:4px 5px;}
   .hammer-pick-name{font-size:0.5rem;}
   .hammer-pick-preview{width:32px;height:13px;}
+  .char-pick-options{gap:4px;}
+  .char-pick-card{padding:3px 4px;}
+  .char-pick-name{font-size:0.48rem;}
   /* 게임 화면 */
   #game-field{margin-top:56px;}
   #top-ui{padding:5px 8px;gap:4px;}
@@ -946,47 +958,8 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   <div class="login-card">
     <div class="login-title">🐾 MolyPoly!</div>
     <div class="login-subtitle">귀여운 두더지를 잡아라! ⭐</div>
-    <!-- Preview mole SVG (고화질) -->
-    <div class="mole-preview">
-      <svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="pvBG" cx="38%" cy="30%" r="65%">
-            <stop offset="0%" stop-color="#c4a898"/><stop offset="100%" stop-color="#8c6f65"/>
-          </radialGradient>
-          <radialGradient id="pvFG" cx="34%" cy="25%" r="68%">
-            <stop offset="0%" stop-color="#f0c8a5"/><stop offset="100%" stop-color="#c89070"/>
-          </radialGradient>
-          <radialGradient id="pvCK" cx="50%" cy="35%" r="65%">
-            <stop offset="0%" stop-color="#ffb0c8" stop-opacity="0.85"/>
-            <stop offset="100%" stop-color="#ff80a8" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#pvBG)"/>
-        <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#pvFG)"/>
-        <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="url(#pvCK)"/>
-        <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="url(#pvCK)"/>
-        <!-- 눈 -->
-        <ellipse cx="36" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
-        <ellipse cx="54" cy="42" rx="7.5" ry="8.5" fill="#f8f3ec"/>
-        <circle cx="37" cy="43" r="5.8" fill="#1e0e02"/>
-        <circle cx="55" cy="43" r="5.8" fill="#1e0e02"/>
-        <circle cx="37" cy="43" r="4.8" fill="#3e2008"/>
-        <circle cx="55" cy="43" r="4.8" fill="#3e2008"/>
-        <circle cx="37.5" cy="43.5" r="2.8" fill="#060200"/>
-        <circle cx="55.5" cy="43.5" r="2.8" fill="#060200"/>
-        <circle cx="40.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
-        <circle cx="58.5" cy="40" r="2.2" fill="#fff" opacity="0.96"/>
-        <circle cx="35" cy="46" r="1" fill="#fff" opacity="0.5"/>
-        <circle cx="53" cy="46" r="1" fill="#fff" opacity="0.5"/>
-        <!-- 코+미소 -->
-        <ellipse cx="45" cy="55" rx="4.5" ry="3.2" fill="#b06858"/>
-        <circle cx="43" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
-        <circle cx="47" cy="55.5" r="1.3" fill="#8a4e40" opacity="0.75"/>
-        <path d="M37 61 Q45 68 53 61" stroke="#9a5848" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <ellipse cx="45" cy="63" rx="5.5" ry="4" fill="#fff"/>
-        <line x1="45" y1="61" x2="45" y2="66" stroke="#e0d8d4" stroke-width="1.2" opacity="0.6"/>
-      </svg>
-    </div>
+    <!-- Preview mole SVG (선택된 캐릭터 반영) -->
+    <div class="mole-preview" id="mole-preview"></div>
     <input type="text" id="nickname-input" class="login-input" placeholder="닉네임을 입력하세요 ✨" maxlength="12"/>
 
     <!-- ① 방 참여 (항상 보임, 핵심 CTA) -->
@@ -998,6 +971,12 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
       <input type="password" id="join-pw-input" class="login-input"
         placeholder="비밀번호 (없으면 빈칸)" maxlength="12"/>
       <button class="login-btn join-primary-btn" id="do-join-btn">🚀 방에 참여하기</button>
+    </div>
+
+    <!-- 캐릭터 선택 -->
+    <div class="char-pick-row">
+      <div class="char-pick-label">🐾 캐릭터 선택</div>
+      <div class="char-pick-options" id="char-pick-options"></div>
     </div>
 
     <!-- 망치 선택 -->
@@ -1869,6 +1848,7 @@ const STATE = {
   timer: 60,
   hammerLevel: 1,
   hammerSkin: 'default',
+  moleChar: 'brown',
   feverActive: false,
   feverTimer: 0,
   bgMode: 'river',
@@ -1878,10 +1858,10 @@ const STATE = {
 
 // Virtual leaderboard
 const VIRTUAL_PLAYERS = [
-  { name:'몽실이', score:0 },
-  { name:'해피해피', score:0 },
-  { name:'뿅망치왕', score:0 },
-  { name:'두더지헌터', score:0 },
+  { name:'몽실이',     score:0, moleChar:'pink'   },
+  { name:'해피해피',   score:0, moleChar:'blue'   },
+  { name:'뿅망치왕',  score:0, moleChar:'purple' },
+  { name:'두더지헌터', score:0, moleChar:'green'  },
 ];
 
 // ============================================================
@@ -1910,6 +1890,29 @@ function triggerHammerSwing(x, y) {
     hammerCursor.classList.remove('hit');
     if (isMobile) hammerCursor.style.removeProperty('display');
   }, 300);
+}
+
+// ── 두더지 캐릭터 선택 UI 초기화 ──────────────────────────────
+function initCharPicker() {
+  const container = document.getElementById('char-pick-options');
+  if (!container) return;
+  container.innerHTML = '';
+  MOLE_CHARS.forEach(char => {
+    const card = document.createElement('div');
+    card.className = 'char-pick-card' + (char.key === STATE.moleChar ? ' selected' : '');
+    card.dataset.char = char.key;
+    card.innerHTML = `${getMoleCharSVG(char.key, 40)}<div class="char-pick-name">${char.name}</div>`;
+    card.addEventListener('pointerdown', () => {
+      STATE.moleChar = char.key;
+      document.querySelectorAll('.char-pick-card').forEach(c => c.classList.toggle('selected', c.dataset.char === char.key));
+      const preview = document.getElementById('mole-preview');
+      if (preview) preview.innerHTML = getMoleCharSVG(char.key, 90);
+    });
+    container.appendChild(card);
+  });
+  // 로그인 화면 두더지 미리보기도 현재 캐릭터로 초기화
+  const preview = document.getElementById('mole-preview');
+  if (preview) preview.innerHTML = getMoleCharSVG(STATE.moleChar, 90);
 }
 
 // ── 망치 스킨 선택 UI 초기화 ──────────────────────────────────
@@ -1975,6 +1978,38 @@ function updateHammerVisual(level) {
 // ============================================================
 // SVG 그라데이션 ID는 HTML 문서 전역 범위 → 충돌 방지를 위해 호출마다 고유 ID 부여
 let _gid = 0;
+
+// ── 플레이어 두더지 캐릭터 ────────────────────────────────────
+const MOLE_CHARS = [
+  { key:'brown',  emoji:'🐾', name:'두더지',     bodyDark:'#8c6f65', bodyLight:'#c4a898', faceDark:'#c89070', faceLight:'#f0c8a5', cheek:'#ffb0c8' },
+  { key:'pink',   emoji:'🌸', name:'핑크두더지', bodyDark:'#c05878', bodyLight:'#f0a0b8', faceDark:'#e070a0', faceLight:'#ffd0e0', cheek:'#ff80b8' },
+  { key:'blue',   emoji:'💙', name:'파란두더지', bodyDark:'#3a6898', bodyLight:'#88b4d8', faceDark:'#6090c0', faceLight:'#aad0e8', cheek:'#80c8ff' },
+  { key:'green',  emoji:'🍀', name:'초록두더지', bodyDark:'#3a7850', bodyLight:'#80b888', faceDark:'#60a870', faceLight:'#a8d8b0', cheek:'#70e090' },
+  { key:'purple', emoji:'💜', name:'보라두더지', bodyDark:'#6848a0', bodyLight:'#a888d0', faceDark:'#8860b8', faceLight:'#c8a0e0', cheek:'#cc88ff' },
+  { key:'black',  emoji:'🖤', name:'다크두더지', bodyDark:'#282828', bodyLight:'#585858', faceDark:'#484848', faceLight:'#787878', cheek:'#909090' },
+];
+
+function getMoleCharSVG(charKey, size = 56) {
+  const char = MOLE_CHARS.find(c => c.key === charKey) || MOLE_CHARS[0];
+  const n = ++_gid;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bGc${n}" cx="38%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="${char.bodyLight}"/>
+        <stop offset="100%" stop-color="${char.bodyDark}"/>
+      </radialGradient>
+      <radialGradient id="fGc${n}" cx="34%" cy="25%" r="68%">
+        <stop offset="0%" stop-color="${char.faceLight}"/>
+        <stop offset="100%" stop-color="${char.faceDark}"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#bGc${n})"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#fGc${n})"/>
+    <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="${char.cheek}" opacity="0.65"/>
+    <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="${char.cheek}" opacity="0.65"/>
+    ${normalEyes()}${noseSmile()}
+  </svg>`;
+}
 
 // Base face parts — reused across types
 // baseFace: 그라데이션 몸통+얼굴+볼터치 공통 레이어 (n = 고유 ID 접미사)
@@ -3154,10 +3189,11 @@ function showEndScreen() {
         name: p.name,
         score: (id === myOnlineId) ? STATE.player.score : (p.score || 0),
         isMe: id === myOnlineId,
+        moleChar: (id === myOnlineId) ? STATE.moleChar : (p.moleChar || 'brown'),
       })).sort((a, b) => b.score - a.score)
     : [
-        { name: STATE.player.name, score: STATE.player.score, isMe: true },
-        ...VIRTUAL_PLAYERS.map(p => ({ name: p.name, score: p.score, isMe: false })),
+        { name: STATE.player.name, score: STATE.player.score, isMe: true, moleChar: STATE.moleChar },
+        ...VIRTUAL_PLAYERS.map(p => ({ name: p.name, score: p.score, isMe: false, moleChar: p.moleChar || 'brown' })),
       ].sort((a, b) => b.score - a.score);
 
   // Garland
@@ -3178,7 +3214,7 @@ function showEndScreen() {
 
   podiumWrap.innerHTML = order.map((p, i) => `
       <div class="podium-slot">
-        <div class="podium-avatar">${getPodiumMoleSVG()}</div>
+        <div class="podium-avatar">${getPodiumMoleSVG(p.moleChar, i === 1)}</div>
         <div class="podium-name${p.isMe ? ' rank-me' : ''}">${p.name}</div>
         <div class="podium-pts">${p.score}점</div>
         <div class="podium-block ${blockClasses[i]}" style="height:${blockHeights[i]}px">
@@ -3188,24 +3224,37 @@ function showEndScreen() {
 
   // Full rank table
   const table = document.getElementById('rank-table');
-  table.innerHTML = allPlayers.map((p, i) => `
+  table.innerHTML = allPlayers.map((p, i) => {
+    const char = MOLE_CHARS.find(c => c.key === (p.moleChar || 'brown')) || MOLE_CHARS[0];
+    return `
     <div class="rank-row${p.isMe ? ' rank-me' : ''}">
       <div class="rank-num">${i+1}</div>
-      <div class="rank-name">${p.name}${p.isMe ? ' ✨' : ''}</div>
+      <div class="rank-name">${char.emoji} ${p.name}${p.isMe ? ' ✨' : ''}</div>
       <div class="rank-pts">${p.score}점</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function getPodiumMoleSVG() {
+function getPodiumMoleSVG(charKey, trophy = false) {
+  const char = MOLE_CHARS.find(c => c.key === (charKey || 'brown')) || MOLE_CHARS[0];
+  const n = ++_gid;
   return `<svg width="64" height="64" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="45" cy="54" rx="32" ry="28" fill="#a1887f"/>
-    <ellipse cx="45" cy="46" rx="26" ry="24" fill="#d7a98a"/>
-    <ellipse cx="33" cy="52" rx="7" ry="5" fill="#ffb6c1" opacity="0.75"/>
-    <ellipse cx="57" cy="52" rx="7" ry="5" fill="#ffb6c1" opacity="0.75"/>
+    <defs>
+      <radialGradient id="bGp${n}" cx="38%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="${char.bodyLight}"/>
+        <stop offset="100%" stop-color="${char.bodyDark}"/>
+      </radialGradient>
+      <radialGradient id="fGp${n}" cx="34%" cy="25%" r="68%">
+        <stop offset="0%" stop-color="${char.faceLight}"/>
+        <stop offset="100%" stop-color="${char.faceDark}"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="45" cy="54" rx="32" ry="28" fill="url(#bGp${n})"/>
+    <ellipse cx="45" cy="46" rx="26" ry="24" fill="url(#fGp${n})"/>
+    <ellipse cx="32" cy="52" rx="8.5" ry="6" fill="${char.cheek}" opacity="0.65"/>
+    <ellipse cx="58" cy="52" rx="8.5" ry="6" fill="${char.cheek}" opacity="0.65"/>
     ${normalEyes()}${noseSmile()}
-    <!-- Trophy -->
-    <text x="45" y="22" text-anchor="middle" font-size="18">🏆</text>
+    ${trophy ? '<text x="45" y="20" text-anchor="middle" font-size="17">🏆</text>' : ''}
   </svg>`;
 }
 
@@ -3295,6 +3344,7 @@ document.addEventListener('keydown', e => {
 
 // 초기 UI 동기화
 updateHoleCountUI();
+initCharPicker();
 initHammerPicker();
 
 // 게임 규칙 모달
@@ -3663,7 +3713,7 @@ function createRoom(pw) {
 
   if (!initSocket()) { showScreen('login'); return; }
   ONLINE.socket.once('connect', () => {
-    ONLINE.socket.emit('create_room', { name: nickname, password: pw || '' });
+    ONLINE.socket.emit('create_room', { name: nickname, password: pw || '', moleChar: STATE.moleChar });
   });
   ONLINE.socket.connect();
 }
@@ -3685,7 +3735,7 @@ function joinRoom(code, pw) {
 
   if (!initSocket()) { showScreen('login'); return; }
   ONLINE.socket.once('connect', () => {
-    ONLINE.socket.emit('join_room', { code, name: nickname, password: pw || '' });
+    ONLINE.socket.emit('join_room', { code, name: nickname, password: pw || '', moleChar: STATE.moleChar });
   });
   ONLINE.socket.connect();
 }
@@ -3697,14 +3747,17 @@ function updateLobbyUI() {
     list.innerHTML = '<div style="text-align:center;color:#b09080;font-size:0.82rem;">플레이어를 기다리는 중...</div>';
     return;
   }
-  list.innerHTML = entries.map(([id, p], i) => `
+  list.innerHTML = entries.map(([id, p], i) => {
+    const char = MOLE_CHARS.find(c => c.key === (p.moleChar || 'brown')) || MOLE_CHARS[0];
+    return `
     <div class="lobby-player-row">
       <span style="color:#b09080;width:20px">${i+1}</span>
-      <span style="flex:1">${p.name}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;flex:1">${char.emoji} ${p.name}</span>
       ${id === ONLINE.myId
         ? '<span class="lobby-host-badge">' + (ONLINE.isHost ? '방장' : '나') + '</span>'
-        : (ONLINE.isHost ? '' : '')}
-    </div>`).join('');
+        : ''}
+    </div>`;
+  }).join('');
   if (ONLINE.isHost) {
     document.getElementById('lobby-status').textContent =
       `🏠 방장 · 참여자 ${entries.length}명`;
