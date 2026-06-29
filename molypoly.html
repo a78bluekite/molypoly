@@ -58,7 +58,13 @@ body{font-family:'Jua','Nanum Gothic','Segoe UI',sans-serif;background:#ffecd2;o
   font-size:1rem;color:#c17b5a;margin-bottom:28px;
   letter-spacing:1px;
 }
-.mole-preview{margin:16px auto 28px;width:90px;height:90px;position:relative;}
+.mole-preview{margin:16px auto 28px;width:90px;height:90px;position:relative;
+  animation:moleFloat 2.4s ease-in-out infinite;transform-origin:center bottom;}
+@keyframes moleFloat{
+  0%,100%{transform:translateY(0) rotate(-2deg) scale(1);}
+  30%{transform:translateY(-10px) rotate(2.5deg) scale(1.06);}
+  65%{transform:translateY(-7px) rotate(-1deg) scale(1.03);}
+}
 .login-input{
   width:100%;padding:14px 20px;border-radius:20px;
   border:2.5px solid #ffb085;font-size:1.05rem;
@@ -1900,6 +1906,51 @@ function triggerHammerSwing(x, y) {
   }, 300);
 }
 
+// ── 미리보기 두더지 애니메이션 (눈 깜빡임) ─────────────────────
+let _blinkTimer = null;
+function startMolePreviewAnim() {
+  if (_blinkTimer) clearTimeout(_blinkTimer);
+
+  function doBlink() {
+    const svg = document.querySelector('#mole-preview svg');
+    if (!svg) { schedBlink(); return; }
+    const eyesGrp = svg.querySelector('.eyes-grp');
+    if (!eyesGrp) { schedBlink(); return; }
+
+    const char = MOLE_CHARS.find(c => c.key === STATE.moleChar) || MOLE_CHARS[0];
+    const orig = eyesGrp.innerHTML;
+    // 감은 눈 — 피부색 타원으로 덮고 눈꺼풀 호 그리기
+    eyesGrp.innerHTML = `
+      <ellipse cx="36" cy="43" rx="8.5" ry="6" fill="${char.faceLight}" opacity="0.95"/>
+      <ellipse cx="54" cy="43" rx="8.5" ry="6" fill="${char.faceLight}" opacity="0.95"/>
+      <path d="M28.5 43 Q36 38.5 43.5 43" stroke="#5a3020" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M46.5 43 Q54 38.5 61.5 43" stroke="#5a3020" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    `;
+    setTimeout(() => {
+      if (eyesGrp.parentNode) eyesGrp.innerHTML = orig;
+      schedBlink();
+    }, 140);
+  }
+
+  function schedBlink() {
+    _blinkTimer = setTimeout(doBlink, 1800 + Math.random() * 2000);
+  }
+  schedBlink();
+}
+
+function bouncePreview() {
+  const p = document.getElementById('mole-preview');
+  if (!p) return;
+  p.style.animationPlayState = 'paused';
+  p.style.transform = 'translateY(-16px) scale(1.14) rotate(5deg)';
+  p.style.transition = 'transform 0.15s cubic-bezier(.4,2,.55,.9)';
+  setTimeout(() => {
+    p.style.transform = '';
+    p.style.transition = 'transform 0.3s ease';
+    setTimeout(() => { p.style.transition = ''; p.style.animationPlayState = ''; }, 300);
+  }, 150);
+}
+
 // ── 두더지 캐릭터 선택 UI 초기화 ──────────────────────────────
 function initCharPicker() {
   const container = document.getElementById('char-pick-options');
@@ -1915,12 +1966,15 @@ function initCharPicker() {
       document.querySelectorAll('.char-pick-card').forEach(c => c.classList.toggle('selected', c.dataset.char === char.key));
       const preview = document.getElementById('mole-preview');
       if (preview) preview.innerHTML = getMoleCharSVG(char.key, 90);
+      bouncePreview();
+      startMolePreviewAnim();
     });
     container.appendChild(card);
   });
   // 로그인 화면 두더지 미리보기도 현재 캐릭터로 초기화
   const preview = document.getElementById('mole-preview');
   if (preview) preview.innerHTML = getMoleCharSVG(STATE.moleChar, 90);
+  startMolePreviewAnim();
 }
 
 // ── 망치 스킨 선택 UI 초기화 ──────────────────────────────────
