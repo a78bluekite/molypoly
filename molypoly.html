@@ -1989,6 +1989,14 @@ const MOLE_CHARS = [
   { key:'black',  emoji:'🖤', name:'다크두더지', bodyDark:'#282828', bodyLight:'#585858', faceDark:'#484848', faceLight:'#787878', cheek:'#909090' },
 ];
 
+const HAMMER_SKINS = [
+  { key:'default', emoji:'🔨', name:'뿅망치',    head:['#f48fb1','#e91e63','#ad1457'], hdl:['#6d4c28','#a0784a','#c8a06a'], glow:null },
+  { key:'thor',    emoji:'⚡', name:'토르 망치', head:['#cfd8dc','#78909c','#37474f'], hdl:['#263238','#546e7a','#78909c'], glow:'#ffe066' },
+  { key:'fire',    emoji:'🔥', name:'불꽃 망치', head:['#ffcc80','#f44336','#b71c1c'], hdl:['#3e2723','#6d4c28','#a0784a'], glow:'#ff5722' },
+  { key:'ice',     emoji:'❄️', name:'얼음 망치', head:['#e1f5fe','#29b6f6','#0277bd'], hdl:['#78909c','#b0bec5','#eceff1'], glow:'#81d4fa' },
+  { key:'gold',    emoji:'✨', name:'황금 망치', head:['#fffde7','#ffd700','#e65100'], hdl:['#6d4c28','#b8860b','#daa520'], glow:'#ffd700' },
+];
+
 function getMoleCharSVG(charKey, size = 56) {
   const char = MOLE_CHARS.find(c => c.key === charKey) || MOLE_CHARS[0];
   const n = ++_gid;
@@ -3579,14 +3587,6 @@ const AudioEngine = (() => {
 // ONLINE MULTIPLAYER (Socket.io)
 // ============================================================
 // ── 망치 스킨 데이터 ──────────────────────────────────────────
-const HAMMER_SKINS = [
-  { key:'default', emoji:'🔨', name:'뿅망치',    head:['#f48fb1','#e91e63','#ad1457'], hdl:['#6d4c28','#a0784a','#c8a06a'], glow:null },
-  { key:'thor',    emoji:'⚡', name:'토르 망치', head:['#cfd8dc','#78909c','#37474f'], hdl:['#263238','#546e7a','#78909c'], glow:'#ffe066' },
-  { key:'fire',    emoji:'🔥', name:'불꽃 망치', head:['#ffcc80','#f44336','#b71c1c'], hdl:['#3e2723','#6d4c28','#a0784a'], glow:'#ff5722' },
-  { key:'ice',     emoji:'❄️', name:'얼음 망치', head:['#e1f5fe','#29b6f6','#0277bd'], hdl:['#78909c','#b0bec5','#eceff1'], glow:'#81d4fa' },
-  { key:'gold',    emoji:'✨', name:'황금 망치', head:['#fffde7','#ffd700','#e65100'], hdl:['#6d4c28','#b8860b','#daa520'], glow:'#ffd700' },
-];
-
 const ONLINE = {
   enabled: false,
   isHost: false,
